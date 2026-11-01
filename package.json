@@ -3,7 +3,6 @@
   "version": "0.2.0",
   "description": "Browser-style book tabs for DeepSeek Harness (DSH): one tab per conversation, workspace badges, drag reorder, pin / close / archive.",
   "type": "module",
-  "private": true,
   "license": "MIT",
   "author": "imchangchang",
   "main": "index.js",
