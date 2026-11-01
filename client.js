@@ -1,5 +1,5 @@
 /**
- * @cgeng/dsh-tab —— dsh Web GUI 的浏览器式会话标签页（浏览器半）。
+ * dsh-tab —— dsh Web GUI 的浏览器式会话标签页（浏览器半）。
  *
  * ## 层级
  * 标签栏是会话区的顶层：位于「会话列 + 右侧产物列」之上，下面才是会话头部、
@@ -33,7 +33,7 @@
  * 不并行渲染多个会话（官方 Conversation 一页一条会话）。
  */
 window.__ModuleLoader__.load({
-  id: '@cgeng/dsh-tab',
+  id: 'dsh-tab',
   factory(require) {
     const React = require('react')
     const h = React.createElement
@@ -1109,8 +1109,8 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
         // 帧布局样式：让 shell.bottom 这行排到三栏上方、横跨会话列 + 右栏列
         ctx.effect(() => {
           const style = document.createElement('style')
-          style.dataset.plugin = '@cgeng/dsh-tab'
-          style.dataset.pluginCss = '@cgeng/dsh-tab/frame.css'
+          style.dataset.plugin = 'dsh-tab'
+          style.dataset.pluginCss = 'dsh-tab/frame.css'
           style.textContent = FRAME_CSS
           document.head.appendChild(style)
           return () => style.remove()

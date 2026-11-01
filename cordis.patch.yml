@@ -1,4 +1,4 @@
-# @cgeng/dsh-tab 的 profile 层补丁：只插入自己一行，不覆盖任何官方行。
+# dsh-tab 的 profile 层补丁：只插入自己一行，不覆盖任何官方行。
 - insert:
-    - id: cgeng-dsh-tab
-      name: '@cgeng/dsh-tab'
+    - id: dsh-tab
+      name: 'dsh-tab'

@@ -1,5 +1,5 @@
 {
-  "name": "@cgeng/dsh-tab",
+  "name": "dsh-tab",
   "version": "0.2.0",
   "description": "Browser-style book tabs for DeepSeek Harness (DSH): one tab per conversation, workspace badges, drag reorder, pin / close / archive.",
   "type": "module",
@@ -22,7 +22,8 @@
     "locale/*.json",
     "icon.svg",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "repository": {
     "type": "git",
@@ -46,7 +47,8 @@
   ],
   "scripts": {
     "check": "node --check client.js && node --check index.js",
-    "docs:mock": "node scripts/make-demo.mjs"
+    "docs:mock": "node scripts/make-demo.mjs",
+    "prepublishOnly": "npm run check"
   },
   "engines": {
     "node": ">=22"

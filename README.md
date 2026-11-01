@@ -4,11 +4,14 @@
 
 Browser-style conversation tabs for DeepSeek Harness (DSH): one tab per conversation, workspace badges, drag reorder, pin / close / archive. Built on official DSH slots, services and theme tokens.
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![npm](https://img.shields.io/npm/v/dsh-tab.svg?color=cb3837)](https://www.npmjs.com/package/dsh-tab)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/imchangchang/dsh-tab/blob/main/LICENSE)
 [![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.5-4d93f8.svg)](#兼容性)
 [![Platform](https://img.shields.io/badge/platform-web%20%7C%20desktop-6b7280.svg)](#兼容性)
 
-![标签栏特写](docs/images/bar-closeup.png)
+npm 包名：**`dsh-tab`**。
+
+![标签栏特写](https://raw.githubusercontent.com/imchangchang/dsh-tab/main/docs/images/bar-closeup.png)
 
 ## 功能
 
@@ -25,34 +28,47 @@ Browser-style conversation tabs for DeepSeek Harness (DSH): one tab per conversa
 
 ## 截图
 
-下面三张截图全部用模拟数据生成（左侧栏、工作区、会话标题都是虚构的），原始页面在 [`docs/mock/demo.html`](docs/mock/demo.html)，可以本地打开或跑 `npm run docs:mock` 重新生成。
+下面三张截图全部用模拟数据生成（左侧栏、工作区、会话标题都是虚构的），原始页面在 [`docs/mock/demo.html`](https://github.com/imchangchang/dsh-tab/blob/main/docs/mock/demo.html)，可以本地打开或跑 `npm run docs:mock` 重新生成。
 
 浅色主题：
 
-![浅色主题](docs/images/tabs-light.png)
+![浅色主题](https://raw.githubusercontent.com/imchangchang/dsh-tab/main/docs/images/tabs-light.png)
 
 深色主题：
 
-![深色主题](docs/images/tabs-dark.png)
+![深色主题](https://raw.githubusercontent.com/imchangchang/dsh-tab/main/docs/images/tabs-dark.png)
 
 右键菜单（固定标签、关闭、归档）：
 
-![右键菜单](docs/images/context-menu.png)
+![右键菜单](https://raw.githubusercontent.com/imchangchang/dsh-tab/main/docs/images/context-menu.png)
 
 ## 安装
 
 要求：DSH 桌面版或 Web GUI，0.2.1-rc.5 附近版本（用法见「兼容性」）。
 
+**从 npm 安装（推荐）**：让 Agent 执行
+
+```
+plugin_manager install_bundle target=dsh-tab
+```
+
+或先本地下载包再安装：
+
+```bash
+npm pack dsh-tab          # 或在 npmjs.com/package/dsh-tab 下载 tgz
+```
+
+安装后刷新窗口（macOS 上 `Cmd+R`）生效。
+
+**从源码安装**：
+
 ```bash
 git clone https://github.com/imchangchang/dsh-tab.git
 ```
 
-然后在 DSH 里把仓库目录作为本地插件安装：
+然后在 DSH 里把仓库目录作为本地插件安装：设置 → 插件 → 添加插件，选择 `dsh-tab` 目录；或让 Agent 执行 `plugin_manager install_bundle target=<dsh-tab 的绝对路径>`。
 
-- 界面：设置 → 插件 → 添加插件，选择 `dsh-tab` 目录；或
-- 让 Agent 执行：`plugin_manager install_bundle target=<dsh-tab 的绝对路径>`。
-
-安装后刷新窗口（macOS 上 `Cmd+R`）生效。插件没有构建步骤，`client.js` 由 DSH 直接加载。
+插件没有构建步骤，`client.js` 由 DSH 直接加载；安装/升级后在设置里确认依赖版本是刚发布的版本。
 
 ## 使用
 
@@ -110,6 +126,7 @@ git clone https://github.com/imchangchang/dsh-tab.git
 ```bash
 npm run check      # node --check 语法检查
 npm run docs:mock  # 从 client.js 的 CSS 生成 docs/mock/demo.html（模拟数据截图页）
+npm pack --dry-run # 查看要发布到 npm 的文件
 ```
 
 本地开发时把仓库目录 link 到 DSH profile 的依赖里（或直接用「安装」里的步骤），改 `client.js` 后 HMR 会应用浏览器半，刷新窗口生效。
@@ -139,4 +156,4 @@ scripts/make-demo.mjs 生成演示页
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/imchangchang/dsh-tab/blob/main/LICENSE)
