@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 — 2026-11-05
+
+- 修复 README 截图在 `raw.githubusercontent.com` 不可达的网络下无法显示：图片改用 jsDelivr CDN，并按 `v0.2.0` tag 固定，GitHub 与 npm 页面都能加载。
+
 ## 0.2.0 — 2026-11-01
 
 - npm 包名：`dsh-tab`，首次发布。
