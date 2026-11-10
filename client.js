@@ -272,6 +272,14 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
         h('path', { key: 'n', d: 'M9.9 6.1 8.7 8.7 6.1 9.9l1.2-2.6 2.6-1.2Z' }),
       ])
     }
+    function IconPanel() {
+      return svg([
+        h('rect', { key: 'a', x: 2.8, y: 2.8, width: 4.4, height: 4.4, rx: 1.2 }),
+        h('rect', { key: 'b', x: 8.8, y: 2.8, width: 4.4, height: 4.4, rx: 1.2 }),
+        h('rect', { key: 'c', x: 2.8, y: 8.8, width: 4.4, height: 4.4, rx: 1.2 }),
+        h('rect', { key: 'd', x: 8.8, y: 8.8, width: 4.4, height: 4.4, rx: 1.2 }),
+      ])
+    }
     function IconPlus() {
       return svg(h('path', { d: 'M8 3.2v9.6M3.2 8h9.6' }))
     }
@@ -451,6 +459,16 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
       return String(error)
     }
 
+    // 全局面板（侧栏「插件」「自动化任务」等）也作为标签页：用 panel:<id> 与会话 id 区分。
+    const PANEL_TAB_PREFIX = 'panel:'
+    const isPanelTab = (id) => typeof id === 'string' && id.startsWith(PANEL_TAB_PREFIX)
+    const panelIdOf = (id) => id.slice(PANEL_TAB_PREFIX.length)
+    const panelTabKey = (panelId) => `${PANEL_TAB_PREFIX}${panelId}`
+    /** 宿主没有 layout 面板信息时退化成「始终在会话页」。 */
+    function useNoPanelInfo(selector) {
+      return selector({ activePanelId: null })
+    }
+
     /**
      * 显示顺序：固定标签在最左（按固定顺序），其余按打开顺序。
      * 切换标签不改变顺序；激活标签只是变宽、和下面的会话页连成一张纸。
@@ -466,7 +484,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 
     // ── 单个标签页 ──────────────────────────────────────────────────────────
     function TabItem(props) {
-      const { id, title, active, signal, blank, pinned, badge, drop, dragging, t, onSelect, onClose, onMenu, onArrow, onDragStart } = props
+      const { id, title, active, signal, blank, pinned, panel, badge, drop, dragging, t, onSelect, onClose, onMenu, onArrow, onDragStart } = props
       const statusLabel =
         signal === 'running' ? t('tab.running') : signal === 'pending' ? t('tab.pending') : signal === 'unread' ? t('tab.unread') : undefined
       return h(
@@ -478,6 +496,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
           'aria-selected': active,
           'data-session-id': id,
           'data-pinned': pinned ? 'true' : 'false',
+          'data-panel-tab': panel ? 'true' : undefined,
           'data-dragging': dragging ? 'true' : 'false',
           'data-drop': drop === null || drop === undefined ? undefined : drop,
           title: pinned ? `${title} · ${t('tab.pinned')}` : title,
@@ -525,7 +544,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
               },
               badge.label,
             ),
-        h('span', { className: 'dsh-tab-pagebar__icon' }, blank ? h(IconCompass) : h(IconConversation)),
+        h('span', { className: 'dsh-tab-pagebar__icon' }, panel ? h(IconPanel) : blank ? h(IconCompass) : h(IconConversation)),
         h('span', { className: 'dsh-tab-pagebar__label' }, title),
         signal !== undefined
           ? h('span', {
@@ -638,7 +657,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
     // ── 标签栏 ──────────────────────────────────────────────────────────────
     function createTabBar(actions) {
       return function TabBar(props) {
-        const { useSessions, useSessionStatus, useWorkspaces, t } = props
+        const { useSessions, useSessionStatus, useWorkspaces, usePanelInfo, t } = props
         const catalog = useSessions((state) => state)
         const statuses = useSessionStatus((state) => state)
         const workspaces = useWorkspaces((state) => state)
@@ -648,6 +667,22 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
         const rows = catalog?.byId ?? {}
         const archived = useMemo(() => new Set(workspaces?.archivedSessionIds ?? []), [workspaces])
         const activeId = currentSessionIdOf(catalog)
+
+        // 全局面板（插件 / 自动化任务 …）：选中项来自官方 layout.panelInfo，
+        // 面板清单与标题来自 sidebar.panellist 槽条目（由 apply 里同步进 panelStore）。
+        const panels = useSyncExternalStore(actions.panelStore.subscribe, actions.panelStore.getSnapshot)
+        const usePanelInfoHook = typeof usePanelInfo === 'function' ? usePanelInfo : useNoPanelInfo
+        const activePanelId = usePanelInfoHook((info) => info.activePanelId)
+        const activePanelKey = activePanelId === null || activePanelId === undefined ? null : panelTabKey(activePanelId)
+        const activeTabId = activePanelKey === null ? activeId : activePanelKey
+        const panelById = useMemo(() => new Map(panels.list.map((panel) => [panel.id, panel])), [panels.list])
+        useLayoutEffect(() => {
+          actions.setView({
+            activePanelId: activePanelId === undefined ? null : activePanelId,
+            panelList: panels.list,
+            panelsReady: panels.ready,
+          })
+        }, [activePanelId, panels])
 
         // 会话 → 所属工作区（角标用）。工作区标题为空时用目录名，再退到 workspaceId。
         const workspaceBadges = useMemo(() => {
@@ -691,13 +726,31 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
         // 会话被删除 / 归档后摘签
         useEffect(() => {
           if (catalog?.phase !== 'ready') return
-          const stale = actions.store.getSnapshot().ids.filter((id) => rows[id] === undefined || archived.has(id))
+          const stale = actions.store.getSnapshot().ids.filter(
+            (id) => !isPanelTab(id) && (rows[id] === undefined || archived.has(id)),
+          )
           if (stale.length > 0) actions.store.removeMany(stale)
         }, [catalog, archived])
 
-        const tabs = displayTabs(snapshot).filter((tab) => rows[tab.id] !== undefined && !archived.has(tab.id))
+        const tabs = displayTabs(snapshot).filter((tab) => {
+          if (isPanelTab(tab.id)) return panels.ready ? panelById.has(panelIdOf(tab.id)) : true
+          return rows[tab.id] !== undefined && !archived.has(tab.id)
+        })
         const pinnedCount = tabs.filter((tab) => tab.pinned).length
-        const visualActiveId = pendingSelect === null ? activeId : pendingSelect.id
+
+        // 打开全局面板时给它一个独立标签（已有则复用）；面板注销后摘掉对应标签。
+        useLayoutEffect(() => {
+          if (activePanelKey === null) return
+          if (!actions.store.has(activePanelKey)) actions.store.add(activePanelKey)
+        }, [activePanelKey])
+        useEffect(() => {
+          if (!panels.ready) return
+          const keys = new Set(panels.list.map((panel) => panelTabKey(panel.id)))
+          const stale = actions.store.getSnapshot().ids.filter((id) => isPanelTab(id) && !keys.has(id))
+          if (stale.length > 0) actions.store.removeMany(stale)
+        }, [panels])
+
+        const visualActiveId = pendingSelect === null ? activeTabId : pendingSelect.id
         const stripRef = useRef(null)
         const barRef = useRef(null)
 
@@ -708,14 +761,14 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
               typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
             if (reduceMotion) {
               clearPendingSelect()
-              actions.select(id)
+              actions.activate(id)
               return
             }
             if (pendingTimerRef.current !== null) {
               clearTimeout(pendingTimerRef.current)
               pendingTimerRef.current = null
             }
-            setPendingSelect({ id, fromId: activeId })
+            setPendingSelect({ id, fromId: activeTabId })
             pendingTimerRef.current = setTimeout(() => {
               pendingTimerRef.current = null
               const pending = pendingRef.current
@@ -724,11 +777,11 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
                 setPendingSelect(null)
                 return
               }
-              actions.select(id)
+              actions.activate(id)
               setPendingSelect(null)
             }, SELECT_COMMIT_DELAY)
           },
-          [activeId, visualActiveId, actions, clearPendingSelect],
+          [activeTabId, visualActiveId, actions, clearPendingSelect],
         )
 
         // ── 拖拽排序 ────────────────────────────────────────────────────────
@@ -825,12 +878,12 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
           document.addEventListener('keydown', onKeyDown, true)
         }
 
-        // 外部导航（侧栏点会话 / 新建会话 / 关闭后自动落位）打断待切换
+        // 外部导航（侧栏点会话 / 面板 / 新建会话 / 关闭后自动落位）打断待切换
         useEffect(() => {
           if (pendingSelect === null) return
-          if (activeId === pendingSelect.id) return
-          if (activeId !== pendingSelect.fromId) clearPendingSelect()
-        }, [activeId, pendingSelect, clearPendingSelect])
+          if (activeTabId === pendingSelect.id) return
+          if (activeTabId !== pendingSelect.fromId) clearPendingSelect()
+        }, [activeTabId, pendingSelect, clearPendingSelect])
 
         useEffect(
           () => () => {
@@ -918,6 +971,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 
         const menuTabIndex = menu === null ? -1 : tabs.findIndex((tab) => tab.id === menu.tabId)
         const menuTab = menuTabIndex < 0 ? undefined : tabs[menuTabIndex]
+        const menuTabIsPanel = menuTab !== undefined && isPanelTab(menuTab.id)
 
         const runMenu = (fn) => () => {
           dismissMenu()
@@ -1003,20 +1057,31 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
               menuTab.pinned
                 ? { key: 'unpin', label: t('menu.unpin'), run: runMenu(() => actions.unpin(menuTab.id)) }
                 : { key: 'pin', label: t('menu.pin'), run: runMenu(() => actions.pin(menuTab.id)) },
-              { key: 'sep-3', separator: true },
-              {
-                key: 'archive',
-                label: t('menu.archive'),
-                danger: true,
-                run: runMenu(() => {
-                  const status = statuses?.get(menuTab.id)
-                  const busy =
-                    status?.running === true ||
-                    (status?.pendingInteraction !== undefined && status?.pendingInteraction !== null)
-                  if (busy) setMenu({ x: menu.x, y: menu.y, tabId: menuTab.id, step: 'archive-confirm', error: undefined })
-                  else startArchive(false)
-                }),
-              },
+              ...(menuTabIsPanel
+                ? []
+                : [
+                    { key: 'sep-3', separator: true },
+                    {
+                      key: 'archive',
+                      label: t('menu.archive'),
+                      danger: true,
+                      run: runMenu(() => {
+                        const status = statuses?.get(menuTab.id)
+                        const busy =
+                          status?.running === true ||
+                          (status?.pendingInteraction !== undefined && status?.pendingInteraction !== null)
+                        if (busy)
+                          setMenu({
+                            x: menu.x,
+                            y: menu.y,
+                            tabId: menuTab.id,
+                            step: 'archive-confirm',
+                            error: undefined,
+                          })
+                        else startArchive(false)
+                      }),
+                    },
+                  ]),
             ]
           }
         }
@@ -1045,21 +1110,28 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
                 'aria-label': t('tab.list'),
               },
               tabs.flatMap((tab, index) => {
-                const row = rows[tab.id]
-                const knownBadge = workspaceBadges.get(tab.id)
-                const cwdLabel = basenameOf(row?.cwd)
+                const panelTab = isPanelTab(tab.id)
+                const panel = panelTab ? panelById.get(panelIdOf(tab.id)) : undefined
+                const row = panelTab ? undefined : rows[tab.id]
+                const knownBadge = panelTab ? undefined : workspaceBadges.get(tab.id)
+                const cwdLabel = panelTab ? '' : basenameOf(row?.cwd)
                 const badge = knownBadge ?? (cwdLabel.length === 0 ? null : { label: cwdLabel, hue: workspaceHue(cwdLabel) })
                 const node = h(TabItem, {
                   key: tab.id,
                   id: tab.id,
                   active: tab.id === visualActiveId,
-                  blank: row?.blank === true,
+                  blank: panelTab ? false : row?.blank === true,
                   pinned: tab.pinned,
+                  panel: panelTab,
                   badge,
                   dragging: dragState !== null && dragState.id === tab.id,
                   drop: dragState !== null && dragState.referenceId === tab.id ? dragState.place : null,
-                  title: row?.blank === true ? t('tab.newSession') : row?.displayTitle || row?.title || t('tab.untitled'),
-                  signal: sessionStatusSignal(statuses?.get(tab.id)),
+                  title: panelTab
+                    ? panel?.label ?? panelIdOf(tab.id)
+                    : row?.blank === true
+                      ? t('tab.newSession')
+                      : row?.displayTitle || row?.title || t('tab.untitled'),
+                  signal: panelTab ? undefined : sessionStatusSignal(statuses?.get(tab.id)),
                   t,
                   onSelect: onTabSelect,
                   onClose: actions.closeOne,
@@ -1102,7 +1174,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 
     // ── 插件入口 ────────────────────────────────────────────────────────────
     return {
-      inject: ['slots', 'locale', 'sessions', 'uiWorkspace', 'workspaces'],
+      inject: ['slots', 'locale', 'sessions', 'uiWorkspace', 'workspaces', 'layout'],
       apply(ctx) {
         ctx.effect(() => ctx.locale.register(NS, { zh: ZH, en: EN }), 'dsh-tab: dictionaries')
 
@@ -1118,14 +1190,67 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 
         const sessions = ctx.sessions
         const uiWorkspace = ctx.uiWorkspace
+        const layout = ctx.layout
         const store = createTabStore()
+
+        // 侧栏「全局面板」清单：sidebar.panellist 的条目就是可打开的面板（id + 本地化标题）。
+        const createPanelStore = () => {
+          let snapshot = Object.freeze({ ready: false, list: Object.freeze([]) })
+          const listeners = new Set()
+          return {
+            subscribe(listener) {
+              listeners.add(listener)
+              return () => listeners.delete(listener)
+            },
+            getSnapshot() {
+              return snapshot
+            },
+            setList(list) {
+              snapshot = Object.freeze({ ready: true, list: Object.freeze(list.slice()) })
+              for (const listener of [...listeners]) listener()
+            },
+          }
+        }
+        const panelStore = createPanelStore()
+        const resolvePanelLabel = (label) => (typeof label === 'function' ? label() : label)
+        const syncPanels = () => {
+          try {
+            const list = ctx.slots
+              .entriesOfSlot('sidebar.panellist')
+              .map(({ options }) => ({
+                id: options.id,
+                order: options.order ?? 0,
+                label: resolvePanelLabel(options.label) ?? options.id,
+              }))
+              .sort((left, right) => left.order - right.order)
+            panelStore.setList(list)
+          } catch (error) {
+            console.error('dsh-tab: reading global panels failed', error)
+          }
+        }
+        ctx.effect(() => {
+          syncPanels()
+          const offPanels = ctx.slots.subscribe('sidebar.panellist', syncPanels)
+          const offLocale = ctx.locale.subscribe(syncPanels)
+          return () => {
+            offPanels()
+            offLocale()
+          }
+        }, 'dsh-tab: global panel entries')
+
+        // 组件把当前视图态同步进来，关闭操作据此判断「正在显示的标签」是会话还是面板。
+        const viewState = { activePanelId: null, panelList: [], panelsReady: false }
 
         /** 当前显示顺序（与渲染层同一套过滤规则，供关闭操作计算左右邻位）。 */
         const tabsNow = () => {
           const catalog = sessions.list.getSnapshot()
           const rows = catalog?.byId ?? {}
           const archived = new Set(ctx.workspaces.list.getSnapshot().archivedSessionIds ?? [])
-          return displayTabs(store.getSnapshot()).filter((tab) => rows[tab.id] !== undefined && !archived.has(tab.id))
+          const panelKeys = new Set(viewState.panelList.map((panel) => panelTabKey(panel.id)))
+          return displayTabs(store.getSnapshot()).filter((tab) => {
+            if (isPanelTab(tab.id)) return viewState.panelsReady ? panelKeys.has(tab.id) : true
+            return rows[tab.id] !== undefined && !archived.has(tab.id)
+          })
         }
 
         // 关掉当前标签后 official 「新建会话」会复用空白会话，导航完成时当前会话可能不变，
@@ -1157,47 +1282,88 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
           }
         }
 
-        /** 关掉一批标签；当前会话在被关列表里时按 nextId / 首个剩余标签 / 新建会话的次序落位。 */
+        /** 切到某个标签：会话标签走 openSession，面板标签走 layout.selectPanel。 */
+        const activate = (id) => {
+          if (isPanelTab(id)) {
+            try {
+              layout.selectPanel(panelIdOf(id))
+            } catch (error) {
+              console.error('dsh-tab: switching to global panel failed', error)
+            }
+            return
+          }
+          try {
+            const current = currentSessionIdOf(sessions.list.getSnapshot())
+            // 同一个会话在面板页下面时，只需要把面板收回、露出会话。
+            if (current === id) {
+              layout.selectPanel(null)
+              return
+            }
+            uiWorkspace.openSession(id)
+          } catch (error) {
+            console.error('dsh-tab: switching conversation failed', error)
+          }
+        }
+
+        /** 关掉一批标签；正在显示的标签在被关列表里时按 nextId / 首个剩余标签 / 新建会话的次序落位。 */
         const closeIds = (idsToClose, nextId) => {
           if (idsToClose.length === 0) return
           const catalog = sessions.list.getSnapshot()
           const current = currentSessionIdOf(catalog)
           const currentRow = current === undefined ? undefined : catalog?.byId?.[current]
+          const activePanelId = viewState.activePanelId
+          const activePanelKey = activePanelId === null || activePanelId === undefined ? null : panelTabKey(activePanelId)
+          const activeKey = activePanelKey ?? (current === undefined ? null : current)
           const allTabs = displayTabs(store.getSnapshot())
           const closingAll = allTabs.every((tab) => idsToClose.includes(tab.id))
-          // 全关但当前就是一个空白「新会话」：官方「新建会话」只会把同一个空白会话再打开，
-          // 所以直接保留它当新的新会话页，避免标签栏空着或导航竞态把旧标签加回来。
-          if (closingAll && current !== undefined && idsToClose.includes(current) && currentRow?.blank === true) {
+          // 全关且当前显示的是空白「新会话」：官方「新建会话」只会复用同一个空白会话，
+          // 所以保留它当新的新会话页，避免标签栏空着或导航竞态把旧标签加回来。
+          if (
+            closingAll &&
+            activePanelKey === null &&
+            current !== undefined &&
+            currentRow?.blank === true &&
+            idsToClose.includes(current)
+          ) {
             const others = idsToClose.filter((id) => id !== current)
-            for (const id of others) store.suppress(id)
+            for (const id of others) if (!isPanelTab(id)) store.suppress(id)
             store.removeMany(others)
             return
           }
-          for (const id of idsToClose) store.suppress(id)
+          for (const id of idsToClose) if (!isPanelTab(id)) store.suppress(id)
           store.removeMany(idsToClose)
-          if (current === undefined || !idsToClose.includes(current)) return
-          if (nextId !== undefined && store.has(nextId) && nextId !== current) {
-            uiWorkspace.openSession(nextId)
+          if (activeKey === null || !idsToClose.includes(activeKey)) return
+          if (nextId !== undefined && store.has(nextId) && nextId !== activeKey) {
+            activate(nextId)
             return
           }
           const remaining = tabsNow()
-          if (remaining.length > 0) uiWorkspace.openSession(remaining[0].id)
-          else {
-            uiWorkspace.startSession()
-            scheduleEnsureCurrentTab(current)
+          if (remaining.length > 0) {
+            activate(remaining[0].id)
+            return
           }
+          // 从面板标签一路关到空：收回面板、回到当前会话，并补回它的标签（不新建会话）。
+          if (activePanelKey !== null && current !== undefined) {
+            layout.selectPanel(null)
+            store.unsuppress(current)
+            if (!store.has(current)) store.add(current)
+            return
+          }
+          uiWorkspace.startSession()
+          scheduleEnsureCurrentTab(current)
         }
 
         const actions = {
           store,
+          panelStore,
+          setView(next) {
+            viewState.activePanelId = next.activePanelId
+            viewState.panelList = next.panelList
+            viewState.panelsReady = next.panelsReady
+          },
+          activate,
           select(id) {
-            try {
-              const current = currentSessionIdOf(sessions.list.getSnapshot())
-              if (current === id) return
-              uiWorkspace.openSession(id)
-            } catch (error) {
-              console.error('dsh-tab: switching conversation failed', error)
-            }
+            activate(id)
           },
           closeOne(id) {
             try {

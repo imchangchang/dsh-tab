@@ -74,6 +74,8 @@ const ICON = {
     '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.6 9.2 6.4 13 7.6 9.2 8.8 8 12.6 6.8 8.8 3 7.6 6.8 6.4 8 2.6Z"/></svg>',
   send:
     '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.6V3.6M4.4 7 8 3.4 11.6 7"/></svg>',
+  grid:
+    '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.8" y="2.8" width="4.4" height="4.4" rx="1.2"/><rect x="8.8" y="2.8" width="4.4" height="4.4" rx="1.2"/><rect x="2.8" y="8.8" width="4.4" height="4.4" rx="1.2"/><rect x="8.8" y="8.8" width="4.4" height="4.4" rx="1.2"/></svg>',
 }
 
 const workspaceLabels = {
@@ -89,6 +91,7 @@ const tabs = [
   { workspace: 'demo-webapp', title: '设计评审待办整理', blank: false, active: true, signal: 'running' },
   { workspace: 'docs-center', title: '每周周报草稿', blank: false },
   { workspace: 'data-lab', title: '数据清洗脚本', blank: false },
+  { panel: true, title: '插件' },
 ]
 
 const renderTab = (tab) => {
@@ -98,10 +101,15 @@ const renderTab = (tab) => {
     `tabindex="${tab.active ? '0' : '-1'}"`,
     `aria-selected="${tab.active ? 'true' : 'false'}"`,
     `data-pinned="${tab.pinned ? 'true' : 'false'}"`,
-    `title="${tab.title} · ${workspaceLabels[tab.workspace]}"`,
-  ].join(' ')
-  const badge = `<span class="dsh-tab-pagebar__badge" style="${badgeStyle(tab.workspace)}" title="工作区：${workspaceLabels[tab.workspace]}">${workspaceLabels[tab.workspace]}</span>`
-  const icon = tab.blank ? ICON.compass : ICON.chat
+    tab.panel ? 'data-panel-tab="true"' : '',
+    `title="${tab.panel ? tab.title : `${tab.title} · ${workspaceLabels[tab.workspace]}`}"`,
+  ]
+    .filter(Boolean)
+    .join(' ')
+  const badge = tab.panel
+    ? ''
+    : `<span class="dsh-tab-pagebar__badge" style="${badgeStyle(tab.workspace)}" title="工作区：${workspaceLabels[tab.workspace]}">${workspaceLabels[tab.workspace]}</span>`
+  const icon = tab.panel ? ICON.grid : tab.blank ? ICON.compass : ICON.chat
   const dot = tab.signal
     ? `<span class="dsh-tab-pagebar__dot" data-signal="${tab.signal}" role="img" aria-label="运行中" title="运行中"></span>`
     : ''
