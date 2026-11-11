@@ -195,86 +195,37 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 .dsh-tab-pagebar__tab[data-drop=before]{box-shadow:inset 2px 0 0 var(--dsw-alias-state-business-primary)}
 .dsh-tab-pagebar__tab[data-drop=after]{box-shadow:inset -2px 0 0 var(--dsw-alias-state-business-primary)}
 /* 左上角小角标：所属工作区（短名，悬停看全名） */
-/* 工作区标签组：参考 Chrome 标签组——彩色描边 + 组头色块 + 组内分隔线 + 统一高度 */
-.dsh-tab-pagebar__group{flex:none;display:flex;align-items:center;gap:0;align-self:flex-end;height:38px;
-  margin:0 6px;padding:0 3px 0 2px;box-sizing:border-box;
-  border:1px solid hsl(var(--dsh-tab-group-hue, 214) 55% 45% / .35);border-bottom:none;
-  border-radius:9px 9px 0 0;
-  background:hsl(var(--dsh-tab-group-hue, 214) 55% 50% / .10)}
-.dsh-tab-pagebar__group[data-active=true]{background:hsl(var(--dsh-tab-group-hue, 214) 55% 50% / .16);
-  border-color:hsl(var(--dsh-tab-group-hue, 214) 55% 45% / .5)}
-.dsh-tab-pagebar__group[data-collapsed=true]{align-self:center;height:auto;padding:0;margin:0 4px;
-  border:none;background:transparent;border-radius:0}
-.dsh-tab-pagebar__group-chip{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:160px;
-  height:22px;padding:0 7px;margin-right:3px;border:none;border-radius:6px;color:#fff;font-family:inherit;
-  font-size:10px;font-weight:600;line-height:22px;cursor:pointer;overflow:hidden;white-space:nowrap;
-  background:hsl(var(--dsh-tab-group-hue, 214) 52% 38%);
-  box-shadow:0 0 0 .5px hsl(var(--dsh-tab-group-hue, 214) 50% 28% / .35)}
-.dsh-tab-pagebar__group[data-collapsed=true] .dsh-tab-pagebar__group-chip{margin-right:0;height:24px;line-height:24px;border-radius:7px}
+/* 工作区标签组：参考 Chrome 标签组——淡色底 + 组头胶囊 + 组底部色线，色线绕过激活标签 */
+.dsh-tab-pagebar__group{position:relative;z-index:1;flex:none;display:flex;align-items:center;align-self:flex-end;
+  height:38px;margin:0 6px;padding:0 3px 0 2px;box-sizing:border-box;border-radius:10px 10px 0 0;
+  background:color-mix(in srgb, hsl(var(--dsh-tab-group-hue, 214) 65% 55%) 18%, var(--dsw-alias-bg-base))}
+.dsh-tab-pagebar__group::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;z-index:0;
+  background:hsl(var(--dsh-tab-group-hue, 214) 65% 42%);border-radius:1px;pointer-events:none}
+.dsh-tab-pagebar__group[data-collapsed=true]{height:auto;padding:0;margin:0 4px;background:transparent;border-radius:0}
+.dsh-tab-pagebar__group[data-collapsed=true]::after{display:none}
+.dsh-tab-pagebar__group-chip{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:170px;
+  height:26px;padding:0 10px;margin-right:4px;border:none;border-radius:999px;color:#fff;font-family:inherit;
+  font-size:11px;font-weight:600;line-height:26px;cursor:pointer;overflow:hidden;white-space:nowrap;
+  background:hsl(var(--dsh-tab-group-hue, 214) 65% 42%);
+  box-shadow:0 0 0 .5px hsl(var(--dsh-tab-group-hue, 214) 60% 32% / .35)}
+.dsh-tab-pagebar__group[data-collapsed=true] .dsh-tab-pagebar__group-chip{margin-right:0;height:28px;line-height:28px}
+.dsh-tab-pagebar__group[data-active=true] .dsh-tab-pagebar__group-chip{box-shadow:0 0 0 1.5px hsl(var(--dsh-tab-group-hue, 214) 65% 42% / .35)}
 .dsh-tab-pagebar__group-chip:hover{filter:brightness(1.08)}
 .dsh-tab-pagebar__group-chip{-webkit-app-region:no-drag}
 .dsh-tab-pagebar__group-chip:focus-visible{outline:1.5px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}
 .dsh-tab-pagebar__group-name{overflow:hidden;text-overflow:ellipsis}
-.dsh-tab-pagebar__group-count{flex:none;min-width:14px;height:14px;padding:0 3px;border-radius:999px;text-align:center;
-  font-size:9px;line-height:14px;background:#ffffff38}
-.dsh-tab-pagebar__group-dot{flex:none;width:5px;height:5px;border-radius:50%;background:#fff}
-/* 组内标签：统一 38 高、透明底；相邻标签之间一条同色细分隔线 */
-.dsh-tab-pagebar__tab[data-group-workspace]{height:38px;background:transparent;box-shadow:none;
-  border-left-color:hsl(var(--dsh-tab-group-hue, 214) 55% 45% / .22)}
+.dsh-tab-pagebar__group-count{flex:none;min-width:15px;height:15px;padding:0 4px;border-radius:999px;text-align:center;
+  font-size:9px;line-height:15px;background:#ffffff3d}
+.dsh-tab-pagebar__group-dot{flex:none;width:6px;height:6px;border-radius:50%;background:#fff}
+/* 组内标签：统一 38 高，透明底；相邻标签一条同色细线；激活标签用组色描边“冒”出组底 */
+.dsh-tab-pagebar__tab[data-group-workspace]{height:38px;z-index:1;background:transparent;box-shadow:none;
+  border-left:1px solid color-mix(in srgb, hsl(var(--dsh-tab-group-hue, 214) 65% 45%) 28%, transparent)}
 .dsh-tab-pagebar__tab[data-group-workspace]:not([aria-selected=true]){color:var(--dsw-alias-label-secondary)}
 .dsh-tab-pagebar__tab[data-group-workspace]:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .dsh-tab-pagebar__group-chip + .dsh-tab-pagebar__tab[data-group-workspace]{border-left-color:transparent}
-/* 短标签：书脊上的一张纸签 */
-.dsh-tab-pagebar__tab{position:relative;box-sizing:border-box;display:flex;align-items:center;gap:7px;
-  flex:0 1 auto;min-width:72px;max-width:var(--dsh-tab-max-width);height:32px;padding:0 6px 0 12px;
-  border:.5px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;
-  background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:13px;line-height:18px;
-  cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-app-region:no-drag;touch-action:pan-y;
-  animation:dsh-tab-enter .16s ease;
-  transition:background-color .12s ease,color .12s ease,height .14s cubic-bezier(.2,.7,.2,1),
-    max-width .14s cubic-bezier(.2,.7,.2,1),border-color .12s ease,border-radius .14s ease,box-shadow .12s ease}
-.dsh-tab-pagebar__tab:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
-/* 选中标签：抬到页面底色、不画底边线，和下面的会话页连成一张纸；
-   可用宽度是普通标签的 1.5 倍（180 → 270），标题短就按实际文字宽度收住、不留空白，
-   标题长才展开到 1.5 倍。切换时宽度和高度一起过渡
-   （只保留上方圆角，底部直角直接接页面，不再做额外的反圆角装饰） */
-.dsh-tab-pagebar__tab[aria-selected=true]{max-width:calc(var(--dsh-tab-max-width) * 1.5);height:38px;
-  background:var(--dsw-alias-bg-base);
-  border-color:var(--dsw-alias-border-l2);border-radius:10px 10px 0 0;color:var(--dsw-alias-label-primary)}
-.dsh-tab-pagebar__tab[aria-selected=true]:hover{background:var(--dsw-alias-bg-base);
-  color:var(--dsw-alias-label-primary)}
-/* 固定标签：只剩图标、宽度固定 40px；激活时也不展开 */
-.dsh-tab-pagebar__tab[data-pinned=true]{width:40px;min-width:40px;max-width:40px;flex:none;padding:0;
-  justify-content:center;gap:4px}
-.dsh-tab-pagebar__tab[data-pinned=true] .dsh-tab-pagebar__label,
-.dsh-tab-pagebar__tab[data-pinned=true] .dsh-tab-pagebar__close{display:none}
-.dsh-tab-pagebar__divider{flex:none;align-self:center;width:1px;height:20px;margin:0 6px;
-  background:var(--dsw-alias-border-l2)}
-.dsh-tab-pagebar__tab:focus-visible{outline:1.5px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:-2px}
-/* 拖拽排序：拖动中的标签变淡，落点画一条竖线 */
-.dsh-tab-pagebar__tab[data-dragging=true]{opacity:.55;cursor:grabbing}
-.dsh-tab-pagebar__tab[data-drop=before]{box-shadow:inset 2px 0 0 var(--dsw-alias-state-business-primary)}
-.dsh-tab-pagebar__tab[data-drop=after]{box-shadow:inset -2px 0 0 var(--dsw-alias-state-business-primary)}
-/* 左上角小角标：所属工作区（短名，悬停看全名） */
-/* 工作区标签组：同一工作区的会话标签聚成一个 Chrome 风格组（颜色跟随工作区） */
-.dsh-tab-pagebar__group{flex:none;display:flex;align-items:flex-end;gap:2px;align-self:flex-end;height:38px;
-  margin:0 4px;padding:0 5px;border-radius:10px 10px 0 0;
-  background:hsl(var(--dsh-tab-group-hue, 214) 55% 50% / .12);
-  box-shadow:inset 0 0 0 .5px hsl(var(--dsh-tab-group-hue, 214) 55% 50% / .22)}
-.dsh-tab-pagebar__group[data-active=true]{background:hsl(var(--dsh-tab-group-hue, 214) 55% 50% / .18)}
-.dsh-tab-pagebar__group[data-collapsed=true]{padding-right:4px;gap:0}
-.dsh-tab-pagebar__group-chip{flex:none;align-self:center;display:inline-flex;align-items:center;gap:4px;max-width:160px;
-  height:18px;padding:0 6px;border:none;border-radius:5px;color:#fff;font-family:inherit;font-size:10px;font-weight:600;
-  line-height:18px;background:hsl(var(--dsh-tab-group-hue, 214) 46% 38%);cursor:pointer;overflow:hidden;white-space:nowrap}
-.dsh-tab-pagebar__group-chip:hover{filter:brightness(1.1)}
-.dsh-tab-pagebar__group-chip{-webkit-app-region:no-drag}
-.dsh-tab-pagebar__group-chip:focus-visible{outline:1.5px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}
-.dsh-tab-pagebar__group-name{overflow:hidden;text-overflow:ellipsis}
-.dsh-tab-pagebar__group-count{flex:none;min-width:13px;height:13px;padding:0 3px;border-radius:999px;text-align:center;
-  font-size:9px;line-height:13px;background:#ffffff45}
-.dsh-tab-pagebar__group-dot{flex:none;width:5px;height:5px;border-radius:50%;background:#fff}
-.dsh-tab-pagebar__tab[data-group-workspace]{background:transparent;box-shadow:none}
-.dsh-tab-pagebar__tab[data-group-workspace]:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.dsh-tab-pagebar__tab[data-group-workspace][aria-selected=true]{background:var(--dsw-alias-bg-base);
+  border:2px solid hsl(var(--dsh-tab-group-hue, 214) 65% 42%);border-bottom:none;
+  border-radius:10px 10px 0 0;padding:0 5px 0 11px;color:var(--dsw-alias-label-primary)}
 .dsh-tab-pagebar__badge{position:absolute;left:5px;top:-5px;box-sizing:border-box;max-width:50%;height:10px;
   padding:0 3px;border-radius:3px;color:#fff;font-size:8.5px;font-weight:600;line-height:10px;letter-spacing:.01em;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;opacity:.96}
