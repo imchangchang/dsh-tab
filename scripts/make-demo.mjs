@@ -92,10 +92,15 @@ const workspaceLabels = {
 const tabs = [
   { pinned: true, workspace: 'demo-webapp', title: '新会话', blank: true, signal: 'running' },
   { pinned: true, workspace: 'docs-center', title: '写作规范', blank: false },
-  { workspace: 'demo-webapp', title: '设计评审待办整理', blank: false, active: true, signal: 'running' },
-  { workspace: 'docs-center', title: '每周周报草稿', blank: false },
-  { workspace: 'data-lab', title: '数据清洗脚本', blank: false },
-  { workspace: 'demo-webapp', title: '接口联调子任务', blank: false, subagent: true },
+  {
+    group: true,
+    parent: { workspace: 'demo-webapp', title: '设计评审待办', blank: false, group: 'parent' },
+    children: [
+      { workspace: 'demo-webapp', title: '接口联调', blank: false, subagent: true, group: 'child', active: true },
+      { workspace: 'demo-webapp', title: '回归测试', blank: false, subagent: true, group: 'child' },
+    ],
+  },
+  { workspace: 'docs-center', title: '周报', blank: false },
   { panel: true, title: '插件' },
 ]
 
@@ -108,6 +113,7 @@ const renderTab = (tab) => {
     `data-pinned="${tab.pinned ? 'true' : 'false'}"`,
     tab.panel ? 'data-panel-tab="true"' : '',
     tab.subagent ? 'data-subagent-tab="true"' : '',
+    tab.group ? `data-group="${tab.group}"` : '',
     `title="${
       tab.panel ? tab.title : tab.subagent ? `${tab.title} · 子智能体（${workspaceLabels[tab.workspace]}）` : `${tab.title} · ${workspaceLabels[tab.workspace]}`
     }"`,
@@ -126,9 +132,17 @@ const renderTab = (tab) => {
   return `<div ${attrs}>${badge}<span class="dsh-tab-pagebar__icon">${icon}</span>${subagentChip}<span class="dsh-tab-pagebar__label">${tab.title}</span>${dot}${close}</div>`
 }
 
-const pinnedCount = tabs.filter((tab) => tab.pinned).length
+const pinnedCount = tabs.filter((tab) => tab.pinned === true).length
 const tabHtml = tabs
   .map((tab, index) => {
+    if (tab.group === true) {
+      const count = tab.children.length
+      const children = tab.children.map((child) => renderTab(child)).join('')
+      return `<div class="dsh-tab-pagebar__group" role="group" aria-label="子智能体标签组：${count} 个子智能体会话">
+        <span class="dsh-tab-pagebar__group-chip" title="${count} 个子智能体（同一标签组）" aria-hidden="true">${ICON.branch}<span>${count}</span></span>
+        ${renderTab(tab.parent)}${children}
+      </div>`
+    }
     const isLastPinned = tab.pinned && index === pinnedCount - 1 && tabs.length > pinnedCount
     return `${renderTab(tab)}${isLastPinned ? '<span class="dsh-tab-pagebar__divider" aria-hidden="true"></span>' : ''}`
   })

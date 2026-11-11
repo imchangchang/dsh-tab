@@ -59,7 +59,10 @@ window.__ModuleLoader__.load({
       'tab.workspace': '工作区：{name}',
       'tab.subagent': '子智能体',
       'tab.subagentShort': '子',
+      'tab.subagentGroupTip': '{n} 个子智能体（同一标签组）',
+      'tab.subagentGroupAria': '子智能体标签组：{n} 个子智能体会话',
       'menu.close': '关闭标签页',
+      'menu.closeGroup': '关闭标签页（含 {n} 个子智能体）',
       'menu.closeRight': '关闭右侧标签页',
       'menu.closeOthers': '关闭其他标签页',
       'menu.closeAll': '关闭全部标签页',
@@ -86,7 +89,10 @@ window.__ModuleLoader__.load({
       'tab.workspace': 'Workspace: {name}',
       'tab.subagent': 'Subagent',
       'tab.subagentShort': 'Sub',
+      'tab.subagentGroupTip': '{n} subagents in this tab group',
+      'tab.subagentGroupAria': 'Subagent tab group: {n} subagent conversations',
       'menu.close': 'Close tab',
+      'menu.closeGroup': 'Close tab (and {n} subagents)',
       'menu.closeRight': 'Close tabs to the right',
       'menu.closeOthers': 'Close other tabs',
       'menu.closeAll': 'Close all tabs',
@@ -191,6 +197,16 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 .dsh-tab-pagebar__tab[data-dragging=true]{opacity:.55;cursor:grabbing}
 .dsh-tab-pagebar__tab[data-drop=before]{box-shadow:inset 2px 0 0 var(--dsw-alias-state-business-primary)}
 .dsh-tab-pagebar__tab[data-drop=after]{box-shadow:inset -2px 0 0 var(--dsw-alias-state-business-primary)}
+/* Chrome 风格标签组：父标签 + 子智能体标签共用一个浅色圆角底，父标签永远在组内第一个 */
+.dsh-tab-pagebar__group{flex:none;display:flex;align-items:flex-end;gap:2px;align-self:flex-end;height:38px;
+  margin:0 4px;padding:0 5px;border-radius:10px 10px 0 0;
+  background:color-mix(in srgb, var(--dsw-alias-state-business-primary) 12%, transparent);
+  box-shadow:inset 0 0 0 .5px color-mix(in srgb, var(--dsw-alias-state-business-primary) 20%, transparent)}
+.dsh-tab-pagebar__group-chip{flex:none;align-self:center;display:inline-flex;align-items:center;gap:2px;
+  height:18px;padding:0 5px;margin-right:2px;border-radius:5px;color:#fff;font-size:10px;font-weight:600;line-height:18px;
+  background:var(--dsw-alias-state-business-primary)}
+.dsh-tab-pagebar__tab[data-group]{background:transparent;box-shadow:none}
+.dsh-tab-pagebar__tab[data-group]:hover{background:var(--dsw-alias-interactive-bg-hover)}
 /* 子智能体会话：标签内一个小「子」标记（悬停标签看父会话） */
 .dsh-tab-pagebar__sub{flex:none;display:inline-grid;place-items:center;height:13px;min-width:13px;padding:0 2px;
   border-radius:3px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover);
@@ -307,13 +323,14 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
       )
     }
     /** 官方 IconBranchOutline16：子智能体会话用分支图标。 */
-    function IconSubagent() {
+    function IconSubagent(props) {
+      const size = typeof props === 'number' ? props : (props?.size ?? 16)
       return h(
         'svg',
         {
           viewBox: '0 0 16 16',
-          width: 16,
-          height: 16,
+          width: size,
+          height: size,
           fill: 'none',
           'aria-hidden': true,
           focusable: false,
@@ -513,6 +530,37 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
     }
 
     /**
+     * 参考 Chrome 标签组：父会话标签和它的子智能体标签合成一组，父标签永远在组内第一个。
+     * 返回渲染项：{ kind: 'tab', tab } 或 { kind: 'group', parent, children }。
+     */
+    function groupSessionTabs(list, rows) {
+      const childrenByParent = new Map()
+      for (const tab of list) {
+        if (tab.pinned) continue
+        const row = rows[tab.id]
+        if (row === undefined || row.origin !== 'subagent' || row.parentId === undefined) continue
+        const parentRow = rows[row.parentId]
+        if (parentRow === undefined || parentRow.origin === 'subagent') continue
+        if (!list.some((candidate) => candidate.id === row.parentId && !candidate.pinned)) continue
+        const children = childrenByParent.get(row.parentId) ?? []
+        children.push(tab)
+        childrenByParent.set(row.parentId, children)
+      }
+      const groupedChildIds = new Set([...childrenByParent.values()].flat().map((tab) => tab.id))
+      const items = []
+      for (const tab of list) {
+        const children = childrenByParent.get(tab.id)
+        if (children !== undefined) {
+          items.push({ kind: 'group', parent: tab, children })
+          continue
+        }
+        if (groupedChildIds.has(tab.id)) continue
+        items.push({ kind: 'tab', tab })
+      }
+      return items
+    }
+
+    /**
      * 显示顺序：固定标签在最左（按固定顺序），其余按打开顺序。
      * 切换标签不改变顺序；激活标签只是变宽、和下面的会话页连成一张纸。
      */
@@ -527,7 +575,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 
     // ── 单个标签页 ──────────────────────────────────────────────────────────
     function TabItem(props) {
-      const { id, title, active, signal, blank, pinned, panel, subagent, parentTitle, badge, drop, dragging, t, onSelect, onClose, onMenu, onArrow, onDragStart } = props
+      const { id, title, active, signal, blank, pinned, panel, subagent, parentTitle, group, badge, drop, dragging, t, onSelect, onClose, onMenu, onArrow, onDragStart } = props
       const statusLabel =
         signal === 'running' ? t('tab.running') : signal === 'pending' ? t('tab.pending') : signal === 'unread' ? t('tab.unread') : undefined
       const titleParts = [title]
@@ -545,6 +593,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
           'data-pinned': pinned ? 'true' : 'false',
           'data-panel-tab': panel ? 'true' : undefined,
           'data-subagent-tab': subagent ? 'true' : undefined,
+          'data-group': group === undefined ? undefined : group,
           'data-dragging': dragging ? 'true' : 'false',
           'data-drop': drop === null || drop === undefined ? undefined : drop,
           title: tooltip,
@@ -789,10 +838,12 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
           if (stale.length > 0) actions.store.removeMany(stale)
         }, [catalog, archived])
 
-        const tabs = displayTabs(snapshot).filter((tab) => {
+        const flatTabs = displayTabs(snapshot).filter((tab) => {
           if (isPanelTab(tab.id)) return panels.ready ? panelById.has(panelIdOf(tab.id)) : true
           return rows[tab.id] !== undefined && !archived.has(tab.id)
         })
+        const tabItems = groupSessionTabs(flatTabs, rows)
+        const tabs = tabItems.flatMap((item) => (item.kind === 'group' ? [item.parent, ...item.children] : [item.tab]))
         const pinnedCount = tabs.filter((tab) => tab.pinned).length
 
         // 打开全局面板时给它一个独立标签（已有则复用）；面板注销后摘掉对应标签。
@@ -1094,8 +1145,18 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
           } else if (menuTab !== undefined) {
             const rightCount = tabs.length - menuTabIndex - 1
             const otherCount = tabs.filter((tab) => tab.id !== menuTab.id && !tab.pinned).length
+            const groupChildCount = isPanelTab(menuTab.id)
+              ? 0
+              : tabs.filter((tab) => {
+                  const row = rows[tab.id]
+                  return row !== undefined && row.origin === 'subagent' && row.parentId === menuTab.id
+                }).length
             menuItems = [
-              { key: 'close', label: t('menu.close'), run: runMenu(() => actions.closeOne(menuTab.id)) },
+              {
+                key: 'close',
+                label: groupChildCount > 0 ? t('menu.closeGroup', { n: groupChildCount }) : t('menu.close'),
+                run: runMenu(() => actions.closeOne(menuTab.id)),
+              },
               {
                 key: 'close-right',
                 label: t('menu.closeRight'),
@@ -1166,46 +1227,78 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
                 role: 'tablist',
                 'aria-label': t('tab.list'),
               },
-              tabs.flatMap((tab, index) => {
-                const panelTab = isPanelTab(tab.id)
-                const panel = panelTab ? panelById.get(panelIdOf(tab.id)) : undefined
-                const row = panelTab ? undefined : rows[tab.id]
-                const knownBadge = panelTab ? undefined : workspaceBadges.get(tab.id)
-                const cwdLabel = panelTab ? '' : basenameOf(row?.cwd)
-                const badge = knownBadge ?? (cwdLabel.length === 0 ? null : { label: cwdLabel, hue: workspaceHue(cwdLabel) })
-                const subagent = !panelTab && row?.origin === 'subagent'
-                const parentRow = subagent && row?.parentId !== undefined ? rows[row.parentId] : undefined
-                const parentTitle = parentRow === undefined ? undefined : parentRow.displayTitle || parentRow.title
-                const node = h(TabItem, {
-                  key: tab.id,
-                  id: tab.id,
-                  active: tab.id === visualActiveId,
-                  blank: panelTab ? false : row?.blank === true,
-                  pinned: tab.pinned,
-                  panel: panelTab,
-                  subagent,
-                  parentTitle,
-                  badge,
-                  dragging: dragState !== null && dragState.id === tab.id,
-                  drop: dragState !== null && dragState.referenceId === tab.id ? dragState.place : null,
-                  title: panelTab
-                    ? panel?.label ?? panelIdOf(tab.id)
-                    : row?.blank === true
-                      ? t('tab.newSession')
-                      : row?.displayTitle || row?.title || t('tab.untitled'),
-                  signal: panelTab ? undefined : sessionStatusSignal(statuses?.get(tab.id)),
-                  t,
-                  onSelect: onTabSelect,
-                  onClose: actions.closeOne,
-                  onMenu: openMenu,
-                  onArrow: focusRelative,
-                  onDragStart: (event) => beginDrag(event, tab.id, tab.pinned),
+              (() => {
+                const orderIndex = new Map(tabs.map((tab, index) => [tab.id, index]))
+                const renderTab = (tab, group) => {
+                  const panelTab = isPanelTab(tab.id)
+                  const panel = panelTab ? panelById.get(panelIdOf(tab.id)) : undefined
+                  const row = panelTab ? undefined : rows[tab.id]
+                  const knownBadge = panelTab ? undefined : workspaceBadges.get(tab.id)
+                  const cwdLabel = panelTab ? '' : basenameOf(row?.cwd)
+                  const badge = knownBadge ?? (cwdLabel.length === 0 ? null : { label: cwdLabel, hue: workspaceHue(cwdLabel) })
+                  const subagent = !panelTab && row?.origin === 'subagent'
+                  const parentRow = subagent && row?.parentId !== undefined ? rows[row.parentId] : undefined
+                  const parentTitle = parentRow === undefined ? undefined : parentRow.displayTitle || parentRow.title
+                  const index = orderIndex.get(tab.id) ?? 0
+                  const node = h(TabItem, {
+                    key: tab.id,
+                    id: tab.id,
+                    active: tab.id === visualActiveId,
+                    blank: panelTab ? false : row?.blank === true,
+                    pinned: tab.pinned,
+                    panel: panelTab,
+                    subagent,
+                    parentTitle,
+                    group,
+                    badge,
+                    dragging: dragState !== null && dragState.id === tab.id,
+                    drop: dragState !== null && dragState.referenceId === tab.id ? dragState.place : null,
+                    title: panelTab
+                      ? panel?.label ?? panelIdOf(tab.id)
+                      : row?.blank === true
+                        ? t('tab.newSession')
+                        : row?.displayTitle || row?.title || t('tab.untitled'),
+                    signal: panelTab ? undefined : sessionStatusSignal(statuses?.get(tab.id)),
+                    t,
+                    onSelect: onTabSelect,
+                    onClose: actions.closeOne,
+                    onMenu: openMenu,
+                    onArrow: focusRelative,
+                    onDragStart: (event) => beginDrag(event, tab.id, tab.pinned),
+                  })
+                  const isLastPinned = tab.pinned && index === pinnedCount - 1 && tabs.length > pinnedCount
+                  return isLastPinned
+                    ? [node, h('span', { key: 'divider', className: 'dsh-tab-pagebar__divider', 'aria-hidden': true })]
+                    : [node]
+                }
+                return tabItems.flatMap((item) => {
+                  if (item.kind === 'tab') return renderTab(item.tab)
+                  const count = item.children.length
+                  return h(
+                    'div',
+                    {
+                      key: `group:${item.parent.id}`,
+                      className: 'dsh-tab-pagebar__group',
+                      role: 'group',
+                      'data-tab-group': item.parent.id,
+                      'aria-label': t('tab.subagentGroupAria', { n: count }),
+                    },
+                    h(
+                      'span',
+                      {
+                        key: 'chip',
+                        className: 'dsh-tab-pagebar__group-chip',
+                        title: t('tab.subagentGroupTip', { n: count }),
+                        'aria-hidden': true,
+                      },
+                      h(IconSubagent, { key: 'icon', size: 11 }),
+                      h('span', { key: 'count' }, String(count)),
+                    ),
+                    ...renderTab(item.parent, 'parent'),
+                    ...item.children.flatMap((child) => renderTab(child, 'child')),
+                  )
                 })
-                const isLastPinned = tab.pinned && index === pinnedCount - 1 && tabs.length > pinnedCount
-                return isLastPinned
-                  ? [node, h('span', { key: 'divider', className: 'dsh-tab-pagebar__divider', 'aria-hidden': true })]
-                  : [node]
-              }),
+              })(),
             ),
             h(
               'button',
@@ -1367,8 +1460,25 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
           }
         }
 
+        /** 关父标签会连带关掉它的子智能体标签（Chrome 标签组语义）。 */
+        const expandClosedIds = (idsToClose) => {
+          const catalog = sessions.list.getSnapshot()
+          const allIds = store.getSnapshot().ids
+          const result = new Set(idsToClose)
+          for (const id of idsToClose) {
+            if (isPanelTab(id)) continue
+            for (const candidate of allIds) {
+              const row = catalog?.byId?.[candidate]
+              if (row === undefined || row.origin !== 'subagent' || row.parentId !== id) continue
+              result.add(candidate)
+            }
+          }
+          return [...result]
+        }
+
         /** 关掉一批标签；正在显示的标签在被关列表里时按 nextId / 首个剩余标签 / 新建会话的次序落位。 */
         const closeIds = (idsToClose, nextId) => {
+          idsToClose = expandClosedIds(idsToClose)
           if (idsToClose.length === 0) return
           const catalog = sessions.list.getSnapshot()
           const current = currentSessionIdOf(catalog)
