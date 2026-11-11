@@ -198,7 +198,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 /* 工作区标签组：参考 Chrome 标签组——淡色底 + 组头胶囊 + 组底部色线，色线绕过激活标签 */
 .dsh-tab-pagebar__group{position:relative;z-index:1;flex:none;display:flex;align-items:center;align-self:flex-end;
   height:38px;margin:0 6px;padding:0 3px 0 2px;box-sizing:border-box;border-radius:10px 10px 0 0;
-  background:color-mix(in srgb, hsl(var(--dsh-tab-group-hue, 214) 65% 55%) 18%, var(--dsw-alias-bg-base))}
+  background:transparent}
 .dsh-tab-pagebar__group::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;z-index:0;
   background:hsl(var(--dsh-tab-group-hue, 214) 65% 42%);border-radius:1px;pointer-events:none}
 .dsh-tab-pagebar__group[data-collapsed=true]{height:auto;padding:0;margin:0 4px;background:transparent;border-radius:0}
@@ -219,7 +219,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 .dsh-tab-pagebar__group-dot{flex:none;width:6px;height:6px;border-radius:50%;background:#fff}
 /* 组内标签：统一 38 高，透明底；相邻标签一条同色细线；激活标签用组色描边“冒”出组底 */
 .dsh-tab-pagebar__tab[data-group-workspace]{height:38px;z-index:1;background:transparent;box-shadow:none;
-  border-left:1px solid color-mix(in srgb, hsl(var(--dsh-tab-group-hue, 214) 65% 45%) 28%, transparent)}
+  border-left:1px solid color-mix(in srgb, hsl(var(--dsh-tab-group-hue, 214) 65% 45%) 40%, transparent)}
 .dsh-tab-pagebar__tab[data-group-workspace]:not([aria-selected=true]){color:var(--dsw-alias-label-secondary)}
 .dsh-tab-pagebar__tab[data-group-workspace]:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .dsh-tab-pagebar__group-chip + .dsh-tab-pagebar__tab[data-group-workspace]{border-left-color:transparent}
