@@ -76,6 +76,8 @@ const ICON = {
     '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.6V3.6M4.4 7 8 3.4 11.6 7"/></svg>',
   grid:
     '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.8" y="2.8" width="4.4" height="4.4" rx="1.2"/><rect x="8.8" y="2.8" width="4.4" height="4.4" rx="1.2"/><rect x="2.8" y="8.8" width="4.4" height="4.4" rx="1.2"/><rect x="8.8" y="8.8" width="4.4" height="4.4" rx="1.2"/></svg>',
+  branch:
+    '<svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M13.0762 1.37207C14.0846 1.37228 14.9021 2.19077 14.9023 3.19922C14.9022 4.20772 14.0847 5.02518 13.0762 5.02539C12.2967 5.02539 11.6325 4.53691 11.3701 3.84961H4.35547C4.79397 4.26458 5.15861 4.7644 5.41699 5.33496L7.10645 9.06738C7.88526 10.7875 9.55104 11.9228 11.4189 12.0371C11.7085 11.4109 12.3411 10.9756 13.0762 10.9756C14.0843 10.9759 14.9023 11.7936 14.9023 12.8018C14.9023 13.81 14.0843 14.6277 13.0762 14.6279C12.2534 14.6279 11.5574 14.0832 11.3291 13.335C8.9868 13.1879 6.89981 11.7612 5.92285 9.60352L4.23242 5.87109C3.67503 4.64033 2.44878 3.84961 1.09766 3.84961V2.54883C1.10665 2.54883 1.11601 2.54975 1.125 2.5498L11.3701 2.54883C11.6326 1.86151 12.2969 1.37207 13.0762 1.37207ZM13.0762 12.2764C12.7858 12.2764 12.5508 12.5114 12.5508 12.8018C12.5508 13.0921 12.7858 13.3281 13.0762 13.3281C13.3664 13.3279 13.6025 13.092 13.6025 12.8018C13.6025 12.5115 13.3664 12.2766 13.0762 12.2764ZM13.0762 2.67285C12.7855 2.67285 12.55 2.90861 12.5498 3.19922C12.5499 3.48987 12.7855 3.72559 13.0762 3.72559C13.3667 3.72538 13.6024 3.48975 13.6025 3.19922C13.6023 2.90874 13.3666 2.67306 13.0762 2.67285Z"/></svg>',
   newChat:
     '<svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path fill="currentColor" d="M8.00003 0.3237C3.76075 0.3237 0.32373 3.76072 0.32373 8C0.32373 9.17603 0.589121 10.2922 1.0632 11.2901L1.35291 11.8989L2.5705 11.3205L2.28079 10.7117C1.89079 9.89074 1.67301 8.97167 1.67301 8C1.67301 4.50546 4.50549 1.67298 8.00003 1.67298C11.4946 1.67298 14.3271 4.50546 14.3271 8C14.3271 11.4945 11.4946 14.327 8.00003 14.327C7.28473 14.327 6.76077 14.277 6.29621 14.1487C5.83857 14.0224 5.40441 13.8109 4.88514 13.4488C4.12569 12.919 3.03778 12.7316 2.141 13.2978L2.12682 13.307L2.11264 13.3171L1.34886 13.854L1.79659 15.188L2.86122 14.4384C3.19068 14.2305 3.68325 14.2542 4.11326 14.5539C4.72789 14.9826 5.30042 15.2724 5.93762 15.4484C6.56803 15.6224 7.22776 15.6763 8.00003 15.6763C12.2393 15.6763 15.6763 12.2393 15.6763 8C15.6763 3.76072 12.2393 0.3237 8.00003 0.3237ZM7.32033 4.82535V7.32536H4.82538V8.67464H7.32033V11.1747H8.6696V8.67464H11.1747V7.32536H8.6696V4.82535H7.32033Z"/></svg>',
 }
@@ -93,6 +95,7 @@ const tabs = [
   { workspace: 'demo-webapp', title: '设计评审待办整理', blank: false, active: true, signal: 'running' },
   { workspace: 'docs-center', title: '每周周报草稿', blank: false },
   { workspace: 'data-lab', title: '数据清洗脚本', blank: false },
+  { workspace: 'demo-webapp', title: '接口联调子任务', blank: false, subagent: true },
   { panel: true, title: '插件' },
 ]
 
@@ -104,19 +107,23 @@ const renderTab = (tab) => {
     `aria-selected="${tab.active ? 'true' : 'false'}"`,
     `data-pinned="${tab.pinned ? 'true' : 'false'}"`,
     tab.panel ? 'data-panel-tab="true"' : '',
-    `title="${tab.panel ? tab.title : `${tab.title} · ${workspaceLabels[tab.workspace]}`}"`,
+    tab.subagent ? 'data-subagent-tab="true"' : '',
+    `title="${
+      tab.panel ? tab.title : tab.subagent ? `${tab.title} · 子智能体（${workspaceLabels[tab.workspace]}）` : `${tab.title} · ${workspaceLabels[tab.workspace]}`
+    }"`,
   ]
     .filter(Boolean)
     .join(' ')
   const badge = tab.panel
     ? ''
     : `<span class="dsh-tab-pagebar__badge" style="${badgeStyle(tab.workspace)}" title="工作区：${workspaceLabels[tab.workspace]}">${workspaceLabels[tab.workspace]}</span>`
-  const icon = tab.panel ? ICON.grid : tab.blank ? ICON.compass : ICON.chat
+  const icon = tab.subagent ? ICON.branch : tab.panel ? ICON.grid : tab.blank ? ICON.compass : ICON.chat
+  const subagentChip = tab.subagent ? '<span class="dsh-tab-pagebar__sub" aria-hidden="true">子</span>' : ''
   const dot = tab.signal
     ? `<span class="dsh-tab-pagebar__dot" data-signal="${tab.signal}" role="img" aria-label="运行中" title="运行中"></span>`
     : ''
   const close = tab.pinned ? '' : `<button type="button" class="dsh-tab-pagebar__close" title="关闭标签页" aria-label="关闭标签页">${ICON.close}</button>`
-  return `<div ${attrs}>${badge}<span class="dsh-tab-pagebar__icon">${icon}</span><span class="dsh-tab-pagebar__label">${tab.title}</span>${dot}${close}</div>`
+  return `<div ${attrs}>${badge}<span class="dsh-tab-pagebar__icon">${icon}</span>${subagentChip}<span class="dsh-tab-pagebar__label">${tab.title}</span>${dot}${close}</div>`
 }
 
 const pinnedCount = tabs.filter((tab) => tab.pinned).length

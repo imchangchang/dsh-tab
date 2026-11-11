@@ -57,6 +57,8 @@ window.__ModuleLoader__.load({
       'tab.unread': '有新完成内容',
       'tab.pinned': '已固定',
       'tab.workspace': '工作区：{name}',
+      'tab.subagent': '子智能体',
+      'tab.subagentShort': '子',
       'menu.close': '关闭标签页',
       'menu.closeRight': '关闭右侧标签页',
       'menu.closeOthers': '关闭其他标签页',
@@ -82,6 +84,8 @@ window.__ModuleLoader__.load({
       'tab.unread': 'New completed response',
       'tab.pinned': 'Pinned',
       'tab.workspace': 'Workspace: {name}',
+      'tab.subagent': 'Subagent',
+      'tab.subagentShort': 'Sub',
       'menu.close': 'Close tab',
       'menu.closeRight': 'Close tabs to the right',
       'menu.closeOthers': 'Close other tabs',
@@ -187,6 +191,10 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 .dsh-tab-pagebar__tab[data-dragging=true]{opacity:.55;cursor:grabbing}
 .dsh-tab-pagebar__tab[data-drop=before]{box-shadow:inset 2px 0 0 var(--dsw-alias-state-business-primary)}
 .dsh-tab-pagebar__tab[data-drop=after]{box-shadow:inset -2px 0 0 var(--dsw-alias-state-business-primary)}
+/* 子智能体会话：标签内一个小「子」标记（悬停标签看父会话） */
+.dsh-tab-pagebar__sub{flex:none;display:inline-grid;place-items:center;height:13px;min-width:13px;padding:0 2px;
+  border-radius:3px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover);
+  box-shadow:inset 0 0 0 .5px var(--dsw-alias-border-l2);font-size:9px;font-weight:600;line-height:13px}
 /* 左上角小角标：所属工作区（短名，悬停看全名） */
 .dsh-tab-pagebar__badge{position:absolute;left:5px;top:-5px;box-sizing:border-box;max-width:50%;height:10px;
   padding:0 3px;border-radius:3px;color:#fff;font-size:8.5px;font-weight:600;line-height:10px;letter-spacing:.01em;
@@ -294,6 +302,26 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
         },
         h('path', {
           d: 'M8.00003 0.3237C3.76075 0.3237 0.32373 3.76072 0.32373 8C0.32373 9.17603 0.589121 10.2922 1.0632 11.2901L1.35291 11.8989L2.5705 11.3205L2.28079 10.7117C1.89079 9.89074 1.67301 8.97167 1.67301 8C1.67301 4.50546 4.50549 1.67298 8.00003 1.67298C11.4946 1.67298 14.3271 4.50546 14.3271 8C14.3271 11.4945 11.4946 14.327 8.00003 14.327C7.28473 14.327 6.76077 14.277 6.29621 14.1487C5.83857 14.0224 5.40441 13.8109 4.88514 13.4488C4.12569 12.919 3.03778 12.7316 2.141 13.2978L2.12682 13.307L2.11264 13.3171L1.34886 13.854L1.79659 15.188L2.86122 14.4384C3.19068 14.2305 3.68325 14.2542 4.11326 14.5539C4.72789 14.9826 5.30042 15.2724 5.93762 15.4484C6.56803 15.6224 7.22776 15.6763 8.00003 15.6763C12.2393 15.6763 15.6763 12.2393 15.6763 8C15.6763 3.76072 12.2393 0.3237 8.00003 0.3237ZM7.32033 4.82535V7.32536H4.82538V8.67464H7.32033V11.1747H8.6696V8.67464H11.1747V7.32536H8.6696V4.82535H7.32033Z',
+          fill: 'currentColor',
+        }),
+      )
+    }
+    /** 官方 IconBranchOutline16：子智能体会话用分支图标。 */
+    function IconSubagent() {
+      return h(
+        'svg',
+        {
+          viewBox: '0 0 16 16',
+          width: 16,
+          height: 16,
+          fill: 'none',
+          'aria-hidden': true,
+          focusable: false,
+        },
+        h('path', {
+          fillRule: 'evenodd',
+          clipRule: 'evenodd',
+          d: 'M13.0762 1.37207C14.0846 1.37228 14.9021 2.19077 14.9023 3.19922C14.9022 4.20772 14.0847 5.02518 13.0762 5.02539C12.2967 5.02539 11.6325 4.53691 11.3701 3.84961H4.35547C4.79397 4.26458 5.15861 4.7644 5.41699 5.33496L7.10645 9.06738C7.88526 10.7875 9.55104 11.9228 11.4189 12.0371C11.7085 11.4109 12.3411 10.9756 13.0762 10.9756C14.0843 10.9759 14.9023 11.7936 14.9023 12.8018C14.9023 13.81 14.0843 14.6277 13.0762 14.6279C12.2534 14.6279 11.5574 14.0832 11.3291 13.335C8.9868 13.1879 6.89981 11.7612 5.92285 9.60352L4.23242 5.87109C3.67503 4.64033 2.44878 3.84961 1.09766 3.84961V2.54883C1.10665 2.54883 1.11601 2.54975 1.125 2.5498L11.3701 2.54883C11.6326 1.86151 12.2969 1.37207 13.0762 1.37207ZM13.0762 12.2764C12.7858 12.2764 12.5508 12.5114 12.5508 12.8018C12.5508 13.0921 12.7858 13.3281 13.0762 13.3281C13.3664 13.3279 13.6025 13.092 13.6025 12.8018C13.6025 12.5115 13.3664 12.2766 13.0762 12.2764ZM13.0762 2.67285C12.7855 2.67285 12.55 2.90861 12.5498 3.19922C12.5499 3.48987 12.7855 3.72559 13.0762 3.72559C13.3667 3.72538 13.6024 3.48975 13.6025 3.19922C13.6023 2.90874 13.3666 2.67306 13.0762 2.67285Z',
           fill: 'currentColor',
         }),
       )
@@ -499,9 +527,13 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 
     // ── 单个标签页 ──────────────────────────────────────────────────────────
     function TabItem(props) {
-      const { id, title, active, signal, blank, pinned, panel, badge, drop, dragging, t, onSelect, onClose, onMenu, onArrow, onDragStart } = props
+      const { id, title, active, signal, blank, pinned, panel, subagent, parentTitle, badge, drop, dragging, t, onSelect, onClose, onMenu, onArrow, onDragStart } = props
       const statusLabel =
         signal === 'running' ? t('tab.running') : signal === 'pending' ? t('tab.pending') : signal === 'unread' ? t('tab.unread') : undefined
+      const titleParts = [title]
+      if (subagent) titleParts.push(parentTitle === undefined ? t('tab.subagent') : `${t('tab.subagent')}（${parentTitle}）`)
+      if (pinned) titleParts.push(t('tab.pinned'))
+      const tooltip = titleParts.join(' · ')
       return h(
         'div',
         {
@@ -512,9 +544,10 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
           'data-session-id': id,
           'data-pinned': pinned ? 'true' : 'false',
           'data-panel-tab': panel ? 'true' : undefined,
+          'data-subagent-tab': subagent ? 'true' : undefined,
           'data-dragging': dragging ? 'true' : 'false',
           'data-drop': drop === null || drop === undefined ? undefined : drop,
-          title: pinned ? `${title} · ${t('tab.pinned')}` : title,
+          title: tooltip,
           onClick: () => onSelect(id),
           onPointerDown: (event) => {
             if (event.button !== 0) return
@@ -559,7 +592,16 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
               },
               badge.label,
             ),
-        h('span', { className: 'dsh-tab-pagebar__icon' }, panel ? h(IconPanel) : blank ? h(IconCompass) : h(IconConversation)),
+        h('span', { className: 'dsh-tab-pagebar__icon' },
+          subagent ? h(IconSubagent) : panel ? h(IconPanel) : blank ? h(IconCompass) : h(IconConversation),
+        ),
+        subagent && !pinned
+          ? h(
+              'span',
+              { key: 'sub', className: 'dsh-tab-pagebar__sub', 'aria-hidden': 'true' },
+              t('tab.subagentShort'),
+            )
+          : null,
         h('span', { className: 'dsh-tab-pagebar__label' }, title),
         signal !== undefined
           ? h('span', {
@@ -1131,6 +1173,9 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
                 const knownBadge = panelTab ? undefined : workspaceBadges.get(tab.id)
                 const cwdLabel = panelTab ? '' : basenameOf(row?.cwd)
                 const badge = knownBadge ?? (cwdLabel.length === 0 ? null : { label: cwdLabel, hue: workspaceHue(cwdLabel) })
+                const subagent = !panelTab && row?.origin === 'subagent'
+                const parentRow = subagent && row?.parentId !== undefined ? rows[row.parentId] : undefined
+                const parentTitle = parentRow === undefined ? undefined : parentRow.displayTitle || parentRow.title
                 const node = h(TabItem, {
                   key: tab.id,
                   id: tab.id,
@@ -1138,6 +1183,8 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
                   blank: panelTab ? false : row?.blank === true,
                   pinned: tab.pinned,
                   panel: panelTab,
+                  subagent,
+                  parentTitle,
                   badge,
                   dragging: dragState !== null && dragState.id === tab.id,
                   drop: dragState !== null && dragState.referenceId === tab.id ? dragState.place : null,
