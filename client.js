@@ -43,6 +43,7 @@ window.__ModuleLoader__.load({
     // 标签宽度/高度过渡约 140ms；等它跑完再切会话，避免和官方整页重渲染抢主线程
     const SELECT_COMMIT_DELAY = 150
     const STORAGE_KEY = 'dsh.tab.view.v2'
+    const COLLAPSED_GROUPS_KEY = 'dsh.tab.groups.collapsed.v1'
     const LEGACY_STORAGE_KEY = 'dsh.tab.openSessions.v1'
 
     // ── 文案（官方 locale 命名空间；en 为必填回退） ──────────────────────────
@@ -57,6 +58,9 @@ window.__ModuleLoader__.load({
       'tab.unread': '有新完成内容',
       'tab.pinned': '已固定',
       'tab.workspace': '工作区：{name}',
+      'tab.workspaceGroupTip': '{name} · {n} 个标签',
+      'tab.workspaceGroupCollapse': '折叠工作区标签组：{name}',
+      'tab.workspaceGroupExpand': '展开工作区标签组：{name}',
       'menu.close': '关闭标签页',
       'menu.closeRight': '关闭右侧标签页',
       'menu.closeOthers': '关闭其他标签页',
@@ -82,6 +86,9 @@ window.__ModuleLoader__.load({
       'tab.unread': 'New completed response',
       'tab.pinned': 'Pinned',
       'tab.workspace': 'Workspace: {name}',
+      'tab.workspaceGroupTip': '{name} · {n} tabs',
+      'tab.workspaceGroupCollapse': 'Collapse workspace tab group: {name}',
+      'tab.workspaceGroupExpand': 'Expand workspace tab group: {name}',
       'menu.close': 'Close tab',
       'menu.closeRight': 'Close tabs to the right',
       'menu.closeOthers': 'Close other tabs',
@@ -188,6 +195,86 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 .dsh-tab-pagebar__tab[data-drop=before]{box-shadow:inset 2px 0 0 var(--dsw-alias-state-business-primary)}
 .dsh-tab-pagebar__tab[data-drop=after]{box-shadow:inset -2px 0 0 var(--dsw-alias-state-business-primary)}
 /* 左上角小角标：所属工作区（短名，悬停看全名） */
+/* 工作区标签组：参考 Chrome 标签组——彩色描边 + 组头色块 + 组内分隔线 + 统一高度 */
+.dsh-tab-pagebar__group{flex:none;display:flex;align-items:center;gap:0;align-self:flex-end;height:38px;
+  margin:0 6px;padding:0 3px 0 2px;box-sizing:border-box;
+  border:1px solid hsl(var(--dsh-tab-group-hue, 214) 55% 45% / .35);border-bottom:none;
+  border-radius:9px 9px 0 0;
+  background:hsl(var(--dsh-tab-group-hue, 214) 55% 50% / .10)}
+.dsh-tab-pagebar__group[data-active=true]{background:hsl(var(--dsh-tab-group-hue, 214) 55% 50% / .16);
+  border-color:hsl(var(--dsh-tab-group-hue, 214) 55% 45% / .5)}
+.dsh-tab-pagebar__group[data-collapsed=true]{align-self:center;height:auto;padding:0;margin:0 4px;
+  border:none;background:transparent;border-radius:0}
+.dsh-tab-pagebar__group-chip{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:160px;
+  height:22px;padding:0 7px;margin-right:3px;border:none;border-radius:6px;color:#fff;font-family:inherit;
+  font-size:10px;font-weight:600;line-height:22px;cursor:pointer;overflow:hidden;white-space:nowrap;
+  background:hsl(var(--dsh-tab-group-hue, 214) 52% 38%);
+  box-shadow:0 0 0 .5px hsl(var(--dsh-tab-group-hue, 214) 50% 28% / .35)}
+.dsh-tab-pagebar__group[data-collapsed=true] .dsh-tab-pagebar__group-chip{margin-right:0;height:24px;line-height:24px;border-radius:7px}
+.dsh-tab-pagebar__group-chip:hover{filter:brightness(1.08)}
+.dsh-tab-pagebar__group-chip{-webkit-app-region:no-drag}
+.dsh-tab-pagebar__group-chip:focus-visible{outline:1.5px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}
+.dsh-tab-pagebar__group-name{overflow:hidden;text-overflow:ellipsis}
+.dsh-tab-pagebar__group-count{flex:none;min-width:14px;height:14px;padding:0 3px;border-radius:999px;text-align:center;
+  font-size:9px;line-height:14px;background:#ffffff38}
+.dsh-tab-pagebar__group-dot{flex:none;width:5px;height:5px;border-radius:50%;background:#fff}
+/* 组内标签：统一 38 高、透明底；相邻标签之间一条同色细分隔线 */
+.dsh-tab-pagebar__tab[data-group-workspace]{height:38px;background:transparent;box-shadow:none;
+  border-left-color:hsl(var(--dsh-tab-group-hue, 214) 55% 45% / .22)}
+.dsh-tab-pagebar__tab[data-group-workspace]:not([aria-selected=true]){color:var(--dsw-alias-label-secondary)}
+.dsh-tab-pagebar__tab[data-group-workspace]:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.dsh-tab-pagebar__group-chip + .dsh-tab-pagebar__tab[data-group-workspace]{border-left-color:transparent}
+/* 短标签：书脊上的一张纸签 */
+.dsh-tab-pagebar__tab{position:relative;box-sizing:border-box;display:flex;align-items:center;gap:7px;
+  flex:0 1 auto;min-width:72px;max-width:var(--dsh-tab-max-width);height:32px;padding:0 6px 0 12px;
+  border:.5px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;
+  background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:13px;line-height:18px;
+  cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-app-region:no-drag;touch-action:pan-y;
+  animation:dsh-tab-enter .16s ease;
+  transition:background-color .12s ease,color .12s ease,height .14s cubic-bezier(.2,.7,.2,1),
+    max-width .14s cubic-bezier(.2,.7,.2,1),border-color .12s ease,border-radius .14s ease,box-shadow .12s ease}
+.dsh-tab-pagebar__tab:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
+/* 选中标签：抬到页面底色、不画底边线，和下面的会话页连成一张纸；
+   可用宽度是普通标签的 1.5 倍（180 → 270），标题短就按实际文字宽度收住、不留空白，
+   标题长才展开到 1.5 倍。切换时宽度和高度一起过渡
+   （只保留上方圆角，底部直角直接接页面，不再做额外的反圆角装饰） */
+.dsh-tab-pagebar__tab[aria-selected=true]{max-width:calc(var(--dsh-tab-max-width) * 1.5);height:38px;
+  background:var(--dsw-alias-bg-base);
+  border-color:var(--dsw-alias-border-l2);border-radius:10px 10px 0 0;color:var(--dsw-alias-label-primary)}
+.dsh-tab-pagebar__tab[aria-selected=true]:hover{background:var(--dsw-alias-bg-base);
+  color:var(--dsw-alias-label-primary)}
+/* 固定标签：只剩图标、宽度固定 40px；激活时也不展开 */
+.dsh-tab-pagebar__tab[data-pinned=true]{width:40px;min-width:40px;max-width:40px;flex:none;padding:0;
+  justify-content:center;gap:4px}
+.dsh-tab-pagebar__tab[data-pinned=true] .dsh-tab-pagebar__label,
+.dsh-tab-pagebar__tab[data-pinned=true] .dsh-tab-pagebar__close{display:none}
+.dsh-tab-pagebar__divider{flex:none;align-self:center;width:1px;height:20px;margin:0 6px;
+  background:var(--dsw-alias-border-l2)}
+.dsh-tab-pagebar__tab:focus-visible{outline:1.5px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:-2px}
+/* 拖拽排序：拖动中的标签变淡，落点画一条竖线 */
+.dsh-tab-pagebar__tab[data-dragging=true]{opacity:.55;cursor:grabbing}
+.dsh-tab-pagebar__tab[data-drop=before]{box-shadow:inset 2px 0 0 var(--dsw-alias-state-business-primary)}
+.dsh-tab-pagebar__tab[data-drop=after]{box-shadow:inset -2px 0 0 var(--dsw-alias-state-business-primary)}
+/* 左上角小角标：所属工作区（短名，悬停看全名） */
+/* 工作区标签组：同一工作区的会话标签聚成一个 Chrome 风格组（颜色跟随工作区） */
+.dsh-tab-pagebar__group{flex:none;display:flex;align-items:flex-end;gap:2px;align-self:flex-end;height:38px;
+  margin:0 4px;padding:0 5px;border-radius:10px 10px 0 0;
+  background:hsl(var(--dsh-tab-group-hue, 214) 55% 50% / .12);
+  box-shadow:inset 0 0 0 .5px hsl(var(--dsh-tab-group-hue, 214) 55% 50% / .22)}
+.dsh-tab-pagebar__group[data-active=true]{background:hsl(var(--dsh-tab-group-hue, 214) 55% 50% / .18)}
+.dsh-tab-pagebar__group[data-collapsed=true]{padding-right:4px;gap:0}
+.dsh-tab-pagebar__group-chip{flex:none;align-self:center;display:inline-flex;align-items:center;gap:4px;max-width:160px;
+  height:18px;padding:0 6px;border:none;border-radius:5px;color:#fff;font-family:inherit;font-size:10px;font-weight:600;
+  line-height:18px;background:hsl(var(--dsh-tab-group-hue, 214) 46% 38%);cursor:pointer;overflow:hidden;white-space:nowrap}
+.dsh-tab-pagebar__group-chip:hover{filter:brightness(1.1)}
+.dsh-tab-pagebar__group-chip{-webkit-app-region:no-drag}
+.dsh-tab-pagebar__group-chip:focus-visible{outline:1.5px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}
+.dsh-tab-pagebar__group-name{overflow:hidden;text-overflow:ellipsis}
+.dsh-tab-pagebar__group-count{flex:none;min-width:13px;height:13px;padding:0 3px;border-radius:999px;text-align:center;
+  font-size:9px;line-height:13px;background:#ffffff45}
+.dsh-tab-pagebar__group-dot{flex:none;width:5px;height:5px;border-radius:50%;background:#fff}
+.dsh-tab-pagebar__tab[data-group-workspace]{background:transparent;box-shadow:none}
+.dsh-tab-pagebar__tab[data-group-workspace]:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .dsh-tab-pagebar__badge{position:absolute;left:5px;top:-5px;box-sizing:border-box;max-width:50%;height:10px;
   padding:0 3px;border-radius:3px;color:#fff;font-size:8.5px;font-weight:600;line-height:10px;letter-spacing:.01em;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;opacity:.96}
@@ -484,6 +571,68 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
       return selector({ activePanelId: null })
     }
 
+    /** 读取 / 保存被折叠的工作区标签组。 */
+    function readCollapsedGroups() {
+      try {
+        const raw = localStorage.getItem(COLLAPSED_GROUPS_KEY)
+        if (raw === null) return new Set()
+        const value = JSON.parse(raw)
+        if (!Array.isArray(value)) return new Set()
+        return new Set(value.filter((item) => typeof item === 'string' && item.length > 0))
+      } catch (error) {
+        return new Set()
+      }
+    }
+    function writeCollapsedGroups(collapsed) {
+      try {
+        localStorage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify([...collapsed]))
+      } catch (error) {
+        /* 视图态，存储不可用时忽略 */
+      }
+    }
+
+    /**
+     * 按工作区聚合标签：同一工作区有 2 个以上（未固定）会话标签时合成一个 Chrome 风格标签组。
+     * 固定标签、面板标签、无法识别工作区的标签不参与聚合。
+     */
+    function groupTabsByWorkspace(list, workspaceMap) {
+      const members = new Map()
+      for (const tab of list) {
+        if (tab.pinned || isPanelTab(tab.id)) continue
+        const workspace = workspaceMap.get(tab.id)
+        if (workspace === undefined || workspace.workspaceId === undefined) continue
+        const group = members.get(workspace.workspaceId) ?? {
+          workspaceId: workspace.workspaceId,
+          label: workspace.label,
+          hue: workspace.hue,
+          tabs: [],
+        }
+        group.tabs.push(tab)
+        members.set(workspace.workspaceId, group)
+      }
+      const groups = new Map()
+      for (const [workspaceId, group] of members) if (group.tabs.length >= 2) groups.set(workspaceId, group)
+      const groupedIds = new Set([...groups.values()].flatMap((group) => group.tabs.map((tab) => tab.id)))
+      const items = []
+      const emittedGroups = new Set()
+      for (const tab of list) {
+        if (!tab.pinned && !isPanelTab(tab.id)) {
+          const workspace = workspaceMap.get(tab.id)
+          const group = workspace === undefined ? undefined : groups.get(workspace.workspaceId)
+          if (group !== undefined) {
+            if (!emittedGroups.has(group.workspaceId)) {
+              emittedGroups.add(group.workspaceId)
+              items.push({ kind: 'group', group })
+            }
+            continue
+          }
+        }
+        if (groupedIds.has(tab.id)) continue
+        items.push({ kind: 'tab', tab })
+      }
+      return items
+    }
+
     /**
      * 显示顺序：固定标签在最左（按固定顺序），其余按打开顺序。
      * 切换标签不改变顺序；激活标签只是变宽、和下面的会话页连成一张纸。
@@ -499,7 +648,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 
     // ── 单个标签页 ──────────────────────────────────────────────────────────
     function TabItem(props) {
-      const { id, title, active, signal, blank, pinned, panel, badge, drop, dragging, t, onSelect, onClose, onMenu, onArrow, onDragStart } = props
+      const { id, title, active, signal, blank, pinned, panel, grouped, badge, drop, dragging, t, onSelect, onClose, onMenu, onArrow, onDragStart } = props
       const statusLabel =
         signal === 'running' ? t('tab.running') : signal === 'pending' ? t('tab.pending') : signal === 'unread' ? t('tab.unread') : undefined
       return h(
@@ -512,6 +661,7 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
           'data-session-id': id,
           'data-pinned': pinned ? 'true' : 'false',
           'data-panel-tab': panel ? 'true' : undefined,
+          'data-group-workspace': grouped ? 'true' : undefined,
           'data-dragging': dragging ? 'true' : 'false',
           'data-drop': drop === null || drop === undefined ? undefined : drop,
           title: pinned ? `${title} · ${t('tab.pinned')}` : title,
@@ -707,7 +857,9 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
             const label = title || basenameOf(item.path) || (item.workspaceId === undefined ? '' : String(item.workspaceId))
             if (label.length === 0) continue
             const hue = workspaceHue(item.workspaceId === undefined ? label : String(item.workspaceId))
-            for (const sessionId of item.sessionIds ?? []) if (!map.has(sessionId)) map.set(sessionId, { label, hue })
+            for (const sessionId of item.sessionIds ?? []) {
+              if (!map.has(sessionId)) map.set(sessionId, { workspaceId: item.workspaceId, label, hue })
+            }
           }
           return map
         }, [workspaces])
@@ -747,11 +899,35 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
           if (stale.length > 0) actions.store.removeMany(stale)
         }, [catalog, archived])
 
-        const tabs = displayTabs(snapshot).filter((tab) => {
+        const flatTabs = displayTabs(snapshot).filter((tab) => {
           if (isPanelTab(tab.id)) return panels.ready ? panelById.has(panelIdOf(tab.id)) : true
           return rows[tab.id] !== undefined && !archived.has(tab.id)
         })
+        const [collapsedGroups, setCollapsedGroups] = useState(readCollapsedGroups)
+        const toggleCollapsedGroup = useCallback((workspaceId) => {
+          setCollapsedGroups((previous) => {
+            const next = new Set(previous)
+            if (next.has(workspaceId)) next.delete(workspaceId)
+            else next.add(workspaceId)
+            writeCollapsedGroups(next)
+            return next
+          })
+        }, [])
+        const workspaceGroupItems = groupTabsByWorkspace(flatTabs, workspaceBadges)
+        const tabs = workspaceGroupItems.flatMap((item) => {
+          if (item.kind === 'tab') return [item.tab]
+          return collapsedGroups.has(item.group.workspaceId) ? [] : item.group.tabs
+        })
         const pinnedCount = tabs.filter((tab) => tab.pinned).length
+        const bucketById = new Map()
+        for (const item of workspaceGroupItems) {
+          if (item.kind === 'tab') {
+            bucketById.set(item.tab.id, 'plain')
+            continue
+          }
+          const bucket = `workspace:${item.group.workspaceId}`
+          for (const tab of item.group.tabs) bucketById.set(tab.id, bucket)
+        }
 
         // 打开全局面板时给它一个独立标签（已有则复用）；面板注销后摘掉对应标签。
         useLayoutEffect(() => {
@@ -821,8 +997,9 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
           if (event.button !== 0 || dragCleanupRef.current !== null) return
           const strip = stripRef.current
           if (strip === null) return
+          const dragBucket = bucketById.get(id) ?? 'plain'
           const candidates = tabs
-            .filter((tab) => tab.pinned === pinned)
+            .filter((tab) => tab.pinned === pinned && (bucketById.get(tab.id) ?? 'plain') === dragBucket)
             .map((tab) => {
               const element = strip.querySelector(`[data-session-id="${tab.id}"]`)
               if (element === null) return null
@@ -1124,41 +1301,92 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
                 role: 'tablist',
                 'aria-label': t('tab.list'),
               },
-              tabs.flatMap((tab, index) => {
-                const panelTab = isPanelTab(tab.id)
-                const panel = panelTab ? panelById.get(panelIdOf(tab.id)) : undefined
-                const row = panelTab ? undefined : rows[tab.id]
-                const knownBadge = panelTab ? undefined : workspaceBadges.get(tab.id)
-                const cwdLabel = panelTab ? '' : basenameOf(row?.cwd)
-                const badge = knownBadge ?? (cwdLabel.length === 0 ? null : { label: cwdLabel, hue: workspaceHue(cwdLabel) })
-                const node = h(TabItem, {
-                  key: tab.id,
-                  id: tab.id,
-                  active: tab.id === visualActiveId,
-                  blank: panelTab ? false : row?.blank === true,
-                  pinned: tab.pinned,
-                  panel: panelTab,
-                  badge,
-                  dragging: dragState !== null && dragState.id === tab.id,
-                  drop: dragState !== null && dragState.referenceId === tab.id ? dragState.place : null,
-                  title: panelTab
-                    ? panel?.label ?? panelIdOf(tab.id)
-                    : row?.blank === true
-                      ? t('tab.newSession')
-                      : row?.displayTitle || row?.title || t('tab.untitled'),
-                  signal: panelTab ? undefined : sessionStatusSignal(statuses?.get(tab.id)),
-                  t,
-                  onSelect: onTabSelect,
-                  onClose: actions.closeOne,
-                  onMenu: openMenu,
-                  onArrow: focusRelative,
-                  onDragStart: (event) => beginDrag(event, tab.id, tab.pinned),
+              (() => {
+                const orderIndex = new Map(tabs.map((tab, index) => [tab.id, index]))
+                const renderTab = (tab, grouped) => {
+                  const panelTab = isPanelTab(tab.id)
+                  const panel = panelTab ? panelById.get(panelIdOf(tab.id)) : undefined
+                  const row = panelTab ? undefined : rows[tab.id]
+                  const knownBadge = panelTab || grouped ? undefined : workspaceBadges.get(tab.id)
+                  const cwdLabel = panelTab || grouped ? '' : basenameOf(row?.cwd)
+                  const badge = grouped
+                    ? null
+                    : knownBadge ?? (cwdLabel.length === 0 ? null : { label: cwdLabel, hue: workspaceHue(cwdLabel) })
+                  const index = orderIndex.get(tab.id) ?? 0
+                  const node = h(TabItem, {
+                    key: tab.id,
+                    id: tab.id,
+                    active: tab.id === visualActiveId,
+                    blank: panelTab ? false : row?.blank === true,
+                    pinned: tab.pinned,
+                    panel: panelTab,
+                    grouped: grouped === true,
+                    badge,
+                    dragging: dragState !== null && dragState.id === tab.id,
+                    drop: dragState !== null && dragState.referenceId === tab.id ? dragState.place : null,
+                    title: panelTab
+                      ? panel?.label ?? panelIdOf(tab.id)
+                      : row?.blank === true
+                        ? t('tab.newSession')
+                        : row?.displayTitle || row?.title || t('tab.untitled'),
+                    signal: panelTab ? undefined : sessionStatusSignal(statuses?.get(tab.id)),
+                    t,
+                    onSelect: onTabSelect,
+                    onClose: actions.closeOne,
+                    onMenu: openMenu,
+                    onArrow: focusRelative,
+                    onDragStart: (event) => beginDrag(event, tab.id, tab.pinned),
+                  })
+                  const isLastPinned = tab.pinned && index === pinnedCount - 1 && tabs.length > pinnedCount
+                  return isLastPinned
+                    ? [node, h('span', { key: 'divider', className: 'dsh-tab-pagebar__divider', 'aria-hidden': true })]
+                    : [node]
+                }
+                return workspaceGroupItems.flatMap((item) => {
+                  if (item.kind === 'tab') return renderTab(item.tab, false)
+                  const group = item.group
+                  const collapsed = collapsedGroups.has(group.workspaceId)
+                  const groupActive = group.tabs.some((tab) => tab.id === visualActiveId)
+                  return h(
+                    'div',
+                    {
+                      key: `workspace:${group.workspaceId}`,
+                      className: 'dsh-tab-pagebar__group',
+                      role: 'group',
+                      'data-tab-group': group.workspaceId,
+                      'data-collapsed': collapsed ? 'true' : 'false',
+                      'data-active': groupActive ? 'true' : 'false',
+                      'aria-label': t('tab.workspaceGroupTip', { name: group.label, n: group.tabs.length }),
+                      style: { '--dsh-tab-group-hue': String(group.hue) },
+                    },
+                    h(
+                      'button',
+                      {
+                        key: 'chip',
+                        type: 'button',
+                        className: 'dsh-tab-pagebar__group-chip',
+                        title: collapsed
+                          ? t('tab.workspaceGroupExpand', { name: group.label })
+                          : t('tab.workspaceGroupCollapse', { name: group.label }),
+                        'aria-expanded': collapsed ? 'false' : 'true',
+                        onPointerDown: (event) => event.stopPropagation(),
+                        onClick: (event) => {
+                          event.stopPropagation()
+                          toggleCollapsedGroup(group.workspaceId)
+                        },
+                      },
+                      h('span', { key: 'name', className: 'dsh-tab-pagebar__group-name' }, group.label),
+                      collapsed
+                        ? h('span', { key: 'count', className: 'dsh-tab-pagebar__group-count' }, String(group.tabs.length))
+                        : null,
+                      collapsed && groupActive
+                        ? h('span', { key: 'active', className: 'dsh-tab-pagebar__group-dot', 'aria-hidden': true })
+                        : null,
+                    ),
+                    ...(collapsed ? [] : group.tabs.flatMap((tab) => renderTab(tab, true))),
+                  )
                 })
-                const isLastPinned = tab.pinned && index === pinnedCount - 1 && tabs.length > pinnedCount
-                return isLastPinned
-                  ? [node, h('span', { key: 'divider', className: 'dsh-tab-pagebar__divider', 'aria-hidden': true })]
-                  : [node]
-              }),
+              })(),
             ),
             h(
               'button',
