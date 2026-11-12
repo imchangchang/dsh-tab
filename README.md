@@ -11,7 +11,7 @@ Browser-style conversation tabs for DeepSeek Harness (DSH): one tab per conversa
 
 npm 包名：**`dsh-tab`**。
 
-![标签栏特写](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@v0.4.0/docs/images/bar-closeup.png)
+![标签栏特写](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@d7b3ced/docs/images/bar-closeup.png)
 
 ## 功能
 
@@ -34,19 +34,19 @@ npm 包名：**`dsh-tab`**。
 
 浅色主题：
 
-![浅色主题](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@v0.4.0/docs/images/tabs-light.png)
+![浅色主题](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@d7b3ced/docs/images/tabs-light.png)
 
 深色主题：
 
-![深色主题](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@v0.4.0/docs/images/tabs-dark.png)
+![深色主题](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@d7b3ced/docs/images/tabs-dark.png)
 
 工作区标签组折叠后（只剩组头胶囊、数量和活动点）：
 
-![工作区标签组折叠](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@v0.4.0/docs/images/group-collapsed.png)
+![工作区标签组折叠](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@d7b3ced/docs/images/group-collapsed.png)
 
 右键菜单（固定标签、关闭、归档）：
 
-![右键菜单](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@v0.4.0/docs/images/context-menu.png)
+![右键菜单](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@d7b3ced/docs/images/context-menu.png)
 
 ## 安装
 
