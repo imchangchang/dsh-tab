@@ -41,7 +41,7 @@ window.__ModuleLoader__.load({
 
     const NS = 'dsh-tab'
     // 标签宽度/高度过渡约 140ms；等它跑完再切会话，避免和官方整页重渲染抢主线程
-    const SELECT_COMMIT_DELAY = 150
+    const SELECT_COMMIT_DELAY = 0
     const STORAGE_KEY = 'dsh.tab.view.v2'
     const COLLAPSED_GROUPS_KEY = 'dsh.tab.groups.collapsed.v1'
     const LEGACY_STORAGE_KEY = 'dsh.tab.openSessions.v1'
@@ -170,16 +170,15 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
   background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:13px;line-height:18px;
   cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-app-region:no-drag;touch-action:pan-y;
   animation:dsh-tab-enter .16s ease;
-  transition:background-color .12s ease,color .12s ease,height .14s cubic-bezier(.2,.7,.2,1),
-    max-width .14s cubic-bezier(.2,.7,.2,1),border-color .12s ease,border-radius .14s ease,box-shadow .12s ease}
+  transition:background-color .1s ease,color .1s ease,border-color .1s ease,box-shadow .1s ease}
 .dsh-tab-pagebar__tab:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
 /* 选中标签：抬到页面底色、不画底边线，和下面的会话页连成一张纸；
    可用宽度是普通标签的 1.5 倍（180 → 270），标题短就按实际文字宽度收住、不留空白，
    标题长才展开到 1.5 倍。切换时宽度和高度一起过渡
    （只保留上方圆角，底部直角直接接页面，不再做额外的反圆角装饰） */
-.dsh-tab-pagebar__tab[aria-selected=true]{max-width:calc(var(--dsh-tab-max-width) * 1.5);height:38px;
-  background:var(--dsw-alias-bg-base);
-  border-color:var(--dsw-alias-border-l2);border-radius:10px 10px 0 0;color:var(--dsw-alias-label-primary)}
+.dsh-tab-pagebar__tab[aria-selected=true]{z-index:1;background:var(--dsw-alias-bg-base);
+  border-color:var(--dsw-alias-border-l2);border-radius:8px 8px 0 0;color:var(--dsw-alias-label-primary);
+  box-shadow:0 2px 8px 0 rgba(15,20,40,.07)}
 .dsh-tab-pagebar__tab[aria-selected=true]:hover{background:var(--dsw-alias-bg-base);
   color:var(--dsw-alias-label-primary)}
 /* 固定标签：只剩图标、宽度固定 40px；激活时也不展开 */
@@ -217,20 +216,22 @@ html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-heig
 .dsh-tab-pagebar__group-count{flex:none;min-width:15px;height:15px;padding:0 4px;border-radius:999px;text-align:center;
   font-size:9px;line-height:15px;background:#ffffff3d}
 .dsh-tab-pagebar__group-dot{flex:none;width:6px;height:6px;border-radius:50%;background:#fff}
-/* 组内标签：统一 38 高，透明底；相邻标签一条同色细线；激活标签用组色描边“冒”出组底 */
-.dsh-tab-pagebar__tab[data-group-workspace]{height:38px;z-index:1;background:transparent;box-shadow:none;
-  border-left:1px solid color-mix(in srgb, hsl(var(--dsh-tab-group-hue, 214) 65% 45%) 40%, transparent)}
+/* 组内标签：统一 38 高、无底色；分隔线用伪元素（不占宽度），激活态只用 inset 描边，不改变任何尺寸 */
+.dsh-tab-pagebar__tab[data-group-workspace]{position:relative;height:38px;z-index:1;background:transparent;box-shadow:none}
+.dsh-tab-pagebar__tab[data-group-workspace]::before{content:"";position:absolute;left:0;top:9px;bottom:7px;width:1px;
+  background:color-mix(in srgb, hsl(var(--dsh-tab-group-hue, 214) 65% 45%) 40%, transparent);pointer-events:none}
 .dsh-tab-pagebar__tab[data-group-workspace]:not([aria-selected=true]){color:var(--dsw-alias-label-secondary)}
 .dsh-tab-pagebar__tab[data-group-workspace]:hover{background:var(--dsw-alias-interactive-bg-hover)}
-.dsh-tab-pagebar__group-chip + .dsh-tab-pagebar__tab[data-group-workspace]{border-left-color:transparent}
+.dsh-tab-pagebar__group-chip + .dsh-tab-pagebar__tab[data-group-workspace]::before{display:none}
 .dsh-tab-pagebar__tab[data-group-workspace][aria-selected=true]{background:var(--dsw-alias-bg-base);
-  border:2px solid hsl(var(--dsh-tab-group-hue, 214) 65% 42%);border-bottom:none;
-  border-radius:10px 10px 0 0;padding:0 5px 0 11px;color:var(--dsw-alias-label-primary)}
+  color:var(--dsw-alias-label-primary);border-color:transparent;border-radius:8px 8px 0 0;
+  box-shadow:inset 0 2px 0 hsl(var(--dsh-tab-group-hue, 214) 65% 42%),
+    inset 2px 0 0 hsl(var(--dsh-tab-group-hue, 214) 65% 42%),
+    inset -2px 0 0 hsl(var(--dsh-tab-group-hue, 214) 65% 42%)}
+.dsh-tab-pagebar__tab[data-group-workspace][aria-selected=true]::before{display:none}
 .dsh-tab-pagebar__badge{position:absolute;left:5px;top:-5px;box-sizing:border-box;max-width:50%;height:10px;
   padding:0 3px;border-radius:3px;color:#fff;font-size:8.5px;font-weight:600;line-height:10px;letter-spacing:.01em;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;opacity:.96}
-/* 激活标签更高，角标随之内收，避免顶到窗口最上沿（两种状态在屏幕上几乎同一高度） */
-.dsh-tab-pagebar__tab[aria-selected=true] .dsh-tab-pagebar__badge{top:1px}
 .dsh-tab-pagebar__tab[data-pinned=true] .dsh-tab-pagebar__badge{left:2px;max-width:38px;padding:0 1px;font-size:7.5px}
 .dsh-tab-pagebar__icon{position:relative;flex:none;width:16px;height:16px;display:grid;place-items:center;
   color:var(--dsw-alias-label-tertiary)}
