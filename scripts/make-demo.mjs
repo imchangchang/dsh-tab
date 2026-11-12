@@ -88,15 +88,21 @@ const workspaceLabels = {
 }
 
 const tabs = [
-  { pinned: true, workspace: 'demo-webapp', title: '新会话', blank: true, signal: 'running' },
   { pinned: true, workspace: 'docs-center', title: '写作规范', blank: false },
-  { workspace: 'demo-webapp', title: '设计评审待办整理', blank: false, active: true, signal: 'running' },
-  { workspace: 'docs-center', title: '每周周报草稿', blank: false },
-  { workspace: 'data-lab', title: '数据清洗脚本', blank: false },
+  {
+    group: true,
+    workspace: 'demo-webapp',
+    children: [
+      { workspace: 'demo-webapp', title: '设计评审', blank: false, active: true, signal: 'running' },
+      { workspace: 'demo-webapp', title: '接口联调', blank: false },
+    ],
+  },
+  { workspace: 'docs-center', title: '周报', blank: false },
+  { workspace: 'data-lab', title: '数据清洗', blank: false },
   { panel: true, title: '插件' },
 ]
 
-const renderTab = (tab) => {
+const renderTab = (tab, grouped = false) => {
   const attrs = [
     `class="dsh-tab-pagebar__tab"`,
     `role="tab"`,
@@ -104,13 +110,15 @@ const renderTab = (tab) => {
     `aria-selected="${tab.active ? 'true' : 'false'}"`,
     `data-pinned="${tab.pinned ? 'true' : 'false'}"`,
     tab.panel ? 'data-panel-tab="true"' : '',
+    grouped ? 'data-group-workspace="true"' : '',
     `title="${tab.panel ? tab.title : `${tab.title} · ${workspaceLabels[tab.workspace]}`}"`,
   ]
     .filter(Boolean)
     .join(' ')
-  const badge = tab.panel
-    ? ''
-    : `<span class="dsh-tab-pagebar__badge" style="${badgeStyle(tab.workspace)}" title="工作区：${workspaceLabels[tab.workspace]}">${workspaceLabels[tab.workspace]}</span>`
+  const badge =
+    tab.panel || grouped
+      ? ''
+      : `<span class="dsh-tab-pagebar__badge" style="${badgeStyle(tab.workspace)}" title="工作区：${workspaceLabels[tab.workspace]}">${workspaceLabels[tab.workspace]}</span>`
   const icon = tab.panel ? ICON.grid : tab.blank ? ICON.compass : ICON.chat
   const dot = tab.signal
     ? `<span class="dsh-tab-pagebar__dot" data-signal="${tab.signal}" role="img" aria-label="运行中" title="运行中"></span>`
@@ -119,9 +127,21 @@ const renderTab = (tab) => {
   return `<div ${attrs}>${badge}<span class="dsh-tab-pagebar__icon">${icon}</span><span class="dsh-tab-pagebar__label">${tab.title}</span>${dot}${close}</div>`
 }
 
+const renderGroup = (group) => {
+  const label = workspaceLabels[group.workspace]
+  const groupHue = hue(group.workspace)
+  const children = group.children.map((child) => renderTab(child, true)).join('')
+  return `<div class="dsh-tab-pagebar__group" role="group" data-collapsed="false" data-active="true"
+    aria-label="${label} · ${group.children.length} 个标签" style="--dsh-tab-group-hue: ${groupHue}">
+    <button type="button" class="dsh-tab-pagebar__group-chip" aria-expanded="true">
+      <span class="dsh-tab-pagebar__group-name">${label}</span>
+    </button>${children}</div>`
+}
+
 const pinnedCount = tabs.filter((tab) => tab.pinned).length
 const tabHtml = tabs
   .map((tab, index) => {
+    if (tab.group === true) return renderGroup(tab)
     const isLastPinned = tab.pinned && index === pinnedCount - 1 && tabs.length > pinnedCount
     return `${renderTab(tab)}${isLastPinned ? '<span class="dsh-tab-pagebar__divider" aria-hidden="true"></span>' : ''}`
   })
@@ -334,6 +354,16 @@ body[data-ds-dark-theme]{color-scheme:dark}
   const params = new URLSearchParams(location.search)
   if (params.get('theme') === 'dark') document.body.setAttribute('data-ds-dark-theme', '')
   if (params.get('menu') === '1') document.documentElement.setAttribute('data-demo-menu', '1')
+  if (params.get('collapsed') === '1') {
+    const group = document.querySelector('.dsh-tab-pagebar__group')
+    if (group) {
+      group.dataset.collapsed = 'true'
+      group.querySelectorAll('.dsh-tab-pagebar__tab').forEach((element) => element.remove())
+      const chip = group.querySelector('.dsh-tab-pagebar__group-chip')
+      chip.setAttribute('aria-expanded', 'false')
+      chip.insertAdjacentHTML('beforeend', '<span class="dsh-tab-pagebar__group-count">2</span><span class="dsh-tab-pagebar__group-dot"></span>')
+    }
+  }
 </script>
 </body>
 </html>

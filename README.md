@@ -1,8 +1,8 @@
 # dsh-tab
 
-给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）会话区加一排书页式会话标签页：一个会话一个标签，切换不刷新页面，可以固定、关闭、归档、拖拽排序，每个标签还会显示它所属的工作区。
+给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）会话区加一排书页式会话标签页：一个会话一个标签，切换不刷新页面，可以固定、关闭、归档、拖拽排序；同一工作区的多个标签会自动聚合成一个 Chrome 风格标签组，点击标签也不会挤动其他标签的位置。
 
-Browser-style conversation tabs for DeepSeek Harness (DSH): one tab per conversation, workspace badges, drag reorder, pin / close / archive. Built on official DSH slots, services and theme tokens.
+Browser-style conversation tabs for DeepSeek Harness (DSH): one tab per conversation, Chrome-style workspace tab groups with collapse, drag reorder, pin / close / archive — and selecting a tab never shifts the others. Built on official DSH slots, services and theme tokens.
 
 [![npm](https://img.shields.io/npm/v/dsh-tab.svg?color=cb3837)](https://www.npmjs.com/package/dsh-tab)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/imchangchang/dsh-tab/blob/main/LICENSE)
@@ -16,7 +16,8 @@ npm 包名：**`dsh-tab`**。
 ## 功能
 
 - **一个会话一个标签页**：打开、恢复、新建会话时自动入签；点击标签走官方 `uiWorkspace.openSession`，不刷新页面。当前会话的标签和下面的会话页连成一张纸，形成「书页」效果。
-- **工作区角标**：每个标签左上角显示所属工作区（颜色由工作区 ID 哈希得到，文字是工作区名，悬停看全名）；固定标签只显示图标时用更小字号。
+- **工作区角标**：未参与分组的标签左上角显示所属工作区（颜色由工作区 ID 哈希得到，文字是工作区名，悬停看全名）；固定标签只显示图标时用更小字号。
+- **工作区标签组（Chrome 风格）**：同一工作区有 2 个以上未固定会话标签时自动聚合成一个标签组——组头是工作区色胶囊（点击折叠/展开），组底部一条工作区色线；选中组内标签时用白底 + 同色描边「冒」出来。折叠后只留胶囊、标签数量和活动小圆点，折叠状态存 `localStorage`。固定标签、面板标签不参与聚合，拖拽只在同一组内排序。
 - **新建会话**：`+` 在最后一个标签右侧；标签多到放不下时标签条自己横向滚动，`+` 始终可见。
 - **侧栏页面也是标签页**：点侧栏的「插件」「自动化任务」等全局面板时，会新增（或切换到已存在的）对应标签，不再顶掉当前会话标签；点回会话标签就收起面板、回到会话。面板标签同样可以关闭、固定、拖拽排序和持久化，面板卸载后标签自动移除。
 - **固定 / 取消固定**：固定的标签排在最左、只显示图标（40px 宽）并带状态点，和普通标签之间有分隔线。
@@ -24,12 +25,12 @@ npm 包名：**`dsh-tab`**。
 - **右键菜单**：关闭标签页 / 关闭右侧 / 关闭其他 / 关闭全部 / 固定（取消固定）/ 归档会话。归档走官方 `uiWorkspace.archiveSession`，会话正在运行或等待回复时先确认「停止并归档」。
 - **状态点**：蓝色呼吸点 = 正在运行，黄色 = 等你回复，绿色 = 有新的完成内容。
 - **键盘**：标签获得焦点时 `←` / `→` 切换相邻标签并激活；右键菜单里 `Esc` 关闭。
-- **过渡**：切换标签时先跑 140ms 的宽度 / 高度过渡，动画结束后再切会话内容——官方切会话会同步重渲染整个会话页（实测一次 60–75ms 长任务），两段并行会把标签动画顶卡。代价是内容切换比点击晚约 150ms。
+- **点击不位移**：点击标签不会改变任何标签的宽度或高度，也不会挤动左右位置；「被拿到前面」只靠白底、描边和很淡的投影表达，会话内容立即切换。
 - **浅色 / 深色**：全部颜色走 `--dsw-alias-*` token，自动跟随主题。
 
 ## 截图
 
-下面三张截图全部用模拟数据生成（左侧栏、工作区、会话标题都是虚构的），原始页面在 [`docs/mock/demo.html`](https://github.com/imchangchang/dsh-tab/blob/main/docs/mock/demo.html)，可以本地打开或跑 `npm run docs:mock` 重新生成。
+下面四张截图全部用模拟数据生成（左侧栏、工作区、会话标题都是虚构的），原始页面在 [`docs/mock/demo.html`](https://github.com/imchangchang/dsh-tab/blob/main/docs/mock/demo.html)，可以本地打开或跑 `npm run docs:mock` 重新生成。
 
 浅色主题：
 
@@ -38,6 +39,10 @@ npm 包名：**`dsh-tab`**。
 深色主题：
 
 ![深色主题](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@v0.3.1/docs/images/tabs-dark.png)
+
+工作区标签组折叠后（只剩组头胶囊、数量和活动点）：
+
+![工作区标签组折叠](https://cdn.jsdelivr.net/gh/imchangchang/dsh-tab@v0.3.1/docs/images/group-collapsed.png)
 
 右键菜单（固定标签、关闭、归档）：
 
@@ -79,6 +84,7 @@ git clone https://github.com/imchangchang/dsh-tab.git
 | 关闭标签页 | 标签页上的 `×` / 鼠标中键 / 右键菜单 |
 | 新建会话 | 最后一个标签右侧的 `+` |
 | 打开侧栏页面 | 点侧栏的「插件」「自动化任务」等，自动新增/切换对应标签页 |
+| 折叠 / 展开工作区标签组 | 点组头的彩色胶囊 |
 | 调整顺序 | 按住标签左右拖拽（同组内） |
 | 固定 / 取消固定 | 右键菜单 → 固定标签页 / 取消固定标签页 |
 | 关闭一批 | 右键菜单 → 关闭右侧 / 关闭其他 / 关闭全部 |
@@ -102,7 +108,7 @@ git clone https://github.com/imchangchang/dsh-tab.git
 | 帧布局样式 | 把三栏 frame 改成三行：第 1 行 44px 给标签栏，第 2 行会话内容，第 3 行官方 `shell.bottom`。只依赖官方既有标记 `data-shell-bottom` / `data-shell-overlay` / `data-side` |
 | `ctx.uiWorkspace.openSession / startSession / archiveSession` | 切换、新建、归档会话 |
 | `ctx.sessions.list` | 读当前会话（`retainedBy.mainView > 0`）与会话状态 |
-| `useWorkspaces` | 取工作区标题与会话归属，生成角标 |
+| `useWorkspaces` | 取工作区标题与会话归属，生成角标并按工作区聚合标签组 |
 | `ctx.slots.inject('shell.overlay', …)` | 注册 React 组件，标准 props 直接可用 |
 | `ctx.locale.register / bind` | 中英文文案 |
 | 主题 token | `--dsw-alias-*`，浅色 / 深色自动跟随 |
@@ -149,10 +155,10 @@ scripts/make-demo.mjs 生成演示页
 
 ## 已知边界
 
-- 标签宽度跟着标题文字自适应：普通标签最多 180px，激活标签最多 270px（普通标签的 1.5 倍），标题短就正好显示全部文字、不预留空白。
-- 工作区角标最多占标签宽度的 1/2，长工作区名会截断（悬停看全名）；固定标签只有 40px 宽，角标固定 38px。
+- 标签宽度跟着标题文字自适应、最多 180px；点击标签不改变宽高和位置，所以长标题会被截断，悬停可看完整标题。
+- 未分组标签的工作区角标最多占标签宽度的 1/2，长工作区名会截断（悬停看全名）；固定标签只有 40px 宽，角标固定 38px；组内标签不显示角标（工作区信息在组头）。
+- 工作区标签组依赖官方 `useWorkspaces` 的 `sessionIds` 映射；没有被任何工作区收录的会话标签不会参与聚合。
 - 拖拽只在同一分组内生效，不能把固定标签拖成普通标签；拖到另一端时不会自动滚标签条。
-- 切换标签会先跑标签动画、再切会话内容，内容比点击晚约 150ms；可以用 `client.js` 顶部的 `SELECT_COMMIT_DELAY` 调整或关闭这个延迟。
 - 未实现全局快捷键（`⌘T` / `⌘W` 等）；右键菜单不支持方向键导航（标签本身支持 `←` / `→`）。
 - 设置、账号菜单这类界面是官方弹窗（overlay），不是全局面板，因此仍以弹窗形式覆盖在当前标签页上；如果要让它们也变成标签页，需要额外接管弹窗的打开/关闭，暂未实现。
 - 只在 macOS 的 DSH 桌面版和 Chrome 系 Web GUI 上验证过，其他平台尚未测试。
