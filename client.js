@@ -118,17 +118,17 @@ div:has(> [data-shell-bottom]):has(> [data-shell-overlay]) {
 div:has(> [data-shell-bottom])[data-rightbar-fullscreen]:has(> [data-shell-overlay]) {
   grid-template-rows: 0 minmax(0, 1fr) auto !important;
 }
-/* 左栏贯穿第 1、2 行，保持整高 */
-div:has(> [data-shell-bottom]):has(> [data-shell-overlay]) > :nth-child(1) {
+/* 窄屏抽屉的遮罩排在三栏之前，不参与三栏定位。左栏贯穿第 1、2 行。 */
+div:has(> [data-shell-bottom]):has(> [data-shell-overlay]) > :nth-child(1 of :not([data-sidebar-mask])) {
   grid-row: 1 / 3 !important;
   grid-column: 1 !important;
 }
 /* 会话列、右栏列下移到第 2 行 */
-div:has(> [data-shell-bottom]):has(> [data-shell-overlay]) > :nth-child(2) {
+div:has(> [data-shell-bottom]):has(> [data-shell-overlay]) > :nth-child(2 of :not([data-sidebar-mask])) {
   grid-row: 2 !important;
   grid-column: 2 !important;
 }
-div:has(> [data-shell-bottom]):has(> [data-shell-overlay]) > :nth-child(3) {
+div:has(> [data-shell-bottom]):has(> [data-shell-overlay]) > :nth-child(3 of :not([data-sidebar-mask])) {
   grid-row: 2 !important;
   grid-column: 3 !important;
 }
@@ -157,6 +157,8 @@ div:has(> [data-shell-bottom]):has(> [data-shell-overlay]) > [data-side] {
   box-shadow:inset 0 -.5px 0 var(--dsw-alias-border-l2);
   -webkit-app-region:drag;
   --dsh-tab-max-width:180px}
+/* 抽屉悬浮在主列上方。标签栏只给原生侧栏按钮留空间。 */
+[data-sidebar-drawer] .dsh-tab-pagebar{left:var(--dsh-frame-leading-clearance, 0px)}
 html[data-windows-titlebar] .dsh-tab-pagebar{top:var(--dsh-windows-titlebar-height, 0px);
   border-top-left-radius:var(--dsh-windows-content-radius, 16px);corner-shape:round}
 [data-rightbar-fullscreen] .dsh-tab-pagebar{display:none}
